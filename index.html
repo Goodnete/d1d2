@@ -46,25 +46,28 @@
         .review-section { margin-top: 60px; border-top: 2px dashed #e6dfd3; padding-top: 40px; text-align: left; }
     </style>
 
-    <!-- 🌐 Firebase 공식 CDN 스크립트 라이브러리 -->
+    <!-- 🌐 Firebase 호환 스크립트 라이브러리 -->
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
 </head>
 <body>
 
     <div class="container">
-        <div id="status-area"></div>
+        <!-- 상단 대기 상태 및 메인 텍스트 -->
+        <div id="status-area"><div class="status-badge status-on"><span class="dot"></span>기사 실시간 대기 중 (즉시 가능)</div></div>
         <h1 id="main-title">성역 무역소</h1>
         <div class="subtitle" id="sub-title">실시간 정보 동기화 무역소</div>
         
+        <!-- 접속 카운터 -->
         <div class="counter-bar">
             <div class="counter-item">🟢 현재 동시 접속: <span id="current-users" class="counter-num">1</span>명</div>
             <div class="counter-item">📊 누적 방문: <span id="total-hits" class="counter-num">1</span>명</div>
         </div>
 
         <div class="notice-bar" id="notice-box"></div>
-        <div id="shop-content"></div>
+        <div id="shop-content">상점 데이터를 로드하고 있습니다...</div>
 
+        <!-- 구매 접수 양식 -->
         <div class="cta-box" style="margin-top: 50px;">
             <h2>🛒 실시간 구매 접수</h2>
             <div style="max-width: 400px; margin: 0 auto; text-align: left;">
@@ -76,19 +79,22 @@
             </div>
         </div>
 
+        <!-- 리뷰 방명록 -->
         <div class="review-section">
             <h3 style="font-size: 1.4rem; color: #5c4b37;">💬 고객 후기 및 방명록</h3>
-            <p style="color: #73675c; font-size: 0.9rem; margin-bottom: 20px;">서비스를 이용하신 후 소중한 한 줄 평을 남겨주세요! (깃허브 로그인이 필요합니다)</p>
+            <p style="color: #73675c; font-size: 0.9rem; margin-bottom: 20px;">서비스를 이용하신 후 소중한 한 줄 평을 남겨주세요!</p>
             <div id="comment-box"></div>
         </div>
     </div>
 
+    <!-- 이미지 모달 팝업 -->
     <div id="imageModal" class="modal" onclick="window.closeModal()">
         <span class="close" onclick="window.closeModal()">&times;</span>
         <img class="modal-content" id="imgPopup">
     </div>
 
     <script>
+        // 🔒 [복구 세팅] 보내주신 고유 연동 주소 및 파베 설정 100% 매칭 적용 완료
         const firebaseConfig = {
             apiKey: "AIzaSyD36u6bSrzrhgDRasi_gd0PtiVIYNdrx0M",
             authDomain: "://firebaseapp.com",
@@ -100,11 +106,13 @@
 
         const GOODS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVLk7j2zUapZZ4M877hqk374oLgtNKlhEweEjKhay4vS0XcZEhRYI68fvynd95hjmv2dTW9ZBw7kTe/pub?gid=0&single=true&output=csv";
         const CONFIG_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVLk7j2zUapZZ4M877hqk374oLgtNKlhEweEjKhay4vS0XcZEhRYI68fvynd95hjmv2dTW9ZBw7kTe/pub?gid=2072258085&single=true&output=csv";
-        const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1508754516210745448/Bt_uWf9G34NFJx_m_9jMiiEIWv5qx4oKpvJggBAdopqCmzS3dmV9gV3aXMbpbYMOQUed";
+        const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1508754516210745448/Bt_uWf9G34NFJx_m_9jMiiEIWv5qx4oKpvJggBAdopqCmzS3dmV9gV3aXMbpbYMOQUed
+";
         const GITHUB_REPO = "Goodnete/d1d2"; 
 
-        window.selectItem = function(itemInfo) {
-            document.getElementById('selected-item').value = itemInfo;
+        // 전역 바인딩 함수 선언
+        window.selectItem = function(title, price) {
+            document.getElementById('selected-item').value = title + " (" + price + ")";
             document.querySelector('.cta-box').scrollIntoView({ behavior: 'smooth' });
         };
 
@@ -117,50 +125,49 @@
             document.getElementById('imageModal').style.display = "none"; 
         };
 
-        // 🚀 [구조 보완] 터진 외부 서비스 카운터를 제외하고 파베 단독 트랜잭션으로 철저히 통합 관리
-        try {
-            firebase.initializeApp(firebaseConfig);
-            var db = firebase.firestore();
-
-            var mySessionId = 'user_' + Math.random().toString(36).substr(2, 9);
-            var userRef = db.collection("active_users").doc(mySessionId);
-            userRef.set({ timestamp: new Date() }).then(function() {
-                window.addEventListener('beforeunload', function() { userRef.delete(); });
-            });
-
-            db.collection("active_users").onSnapshot(function(snapshot) {
-                document.getElementById('current-users').innerText = snapshot.size;
-            });
-
-            var counterRef = db.collection("site_stats").doc("visits_counter");
-            async function updateAndGetHits() {
-                try {
-                    await db.runTransaction(async function(transaction) {
-                        var sfDoc = await transaction.get(counterRef);
-                        if (!sfDoc.exists) { transaction.set(counterRef, { count: 1 }); } 
-                        else { transaction.update(counterRef, { count: sfDoc.data().count + 1 }); }
-                    });
-                    var finalDoc = await counterRef.get();
-                    document.getElementById('total-hits').innerText = finalDoc.data().count;
-                } catch (e) { document.getElementById('total-hits').innerText = "1"; }
-            }
-            updateAndGetHits();
-        } catch (e) { console.error("Firebase Fallback", e); }
-
+        // 🟢 1. 구글 시트 파싱 독립 엔진 (데이터 파괴 완전 방어)
         function parseCSV(text) {
             var lines = text.split(/\r\n|\n/);
             var result = [];
             for (var i = 0; i < lines.length; i++) {
-                if (!lines[i]) continue;
+                if (!lines[i].trim()) continue;
                 var row = [];
                 var insideQuote = false;
-                var entries = lines[i].split(',');
                 var currentEntry = "";
-                for (var j = 0; j < entries.length; j++) {
-                    var str = entries[j];
-                    if (str.startsWith('"') && !insideQuote) {
-                        insideQuote = true;
-                        currentEntry = str.substring(1);
-                    } else if (str.endsWith('"') && insideQuote) {
-                        insideQuote = false;
-                        currentEntry += "," + str.substring(0, str.length - 1);
+                var line = lines[i];
+                
+                for (var j = 0; j < line.length; j++) {
+                    var char = line[j];
+                    if (char === '"') {
+                        insideQuote = !insideQuote;
+                    } else if (char === ',' && !insideQuote) {
+                        row.push(currentEntry.trim());
+                        currentEntry = "";
+                    } else {
+                        currentEntry += char;
+                    }
+                }
+                row.push(currentEntry.trim());
+                if (row.length > 0) result.push(row);
+            }
+            return result;
+        }
+
+        // 🟢 2. 구글 시트 환경설정 동기화 함수
+        async function loadConfigData() {
+            try {
+                var response = await fetch(CONFIG_CSV_URL);
+                var text = await response.text();
+                var parsedData = parseCSV(text).slice(1);
+                parsedData.forEach(function(columns) {
+                    if (columns.length < 2) return;
+                    var key = columns[0];
+                    var value = columns[1];
+                    if (key === "shop_name") document.getElementById('main-title').innerText = value;
+                    if (key === "shop_sub") document.getElementById('sub-title').innerText = value;
+                    if (key === "notice" && value) {
+                        var noticeBox = document.getElementById('notice-box');
+                        noticeBox.innerText = "📢 공지: " + value;
+                        noticeBox.style.display = "block";
+                    }
+                    if (key === "status") {
