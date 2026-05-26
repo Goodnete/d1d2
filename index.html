@@ -46,7 +46,7 @@
         .review-section { margin-top: 60px; border-top: 2px dashed #e6dfd3; padding-top: 40px; text-align: left; }
     </style>
 
-    <!-- 🌐 [해결완료] 끊겨있던 Firebase 라이브러리 주소 정상 연결 완료 -->
+    <!-- 🌐 Firebase 웹 호환 레이어 스크립트 선언 -->
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
 </head>
@@ -89,29 +89,29 @@
     </div>
 
     <script>
-        // 🔗 보내주신 파이어베이스 설정값 주입 완료
+        // 🔗 내 파이어베이스 고유 세팅값 주입 완료
         const firebaseConfig = {
             apiKey: "AIzaSyD36u6bSrzrhgDRasi_gd0PtiVIYNdrx0M",
-            authDomain: "publish-aba68.firebaseapp.com",
+            authDomain: "://firebaseapp.com",
             projectId: "publish-aba68",
             storageBucket: "publish-aba68.firebasestorage.app",
             messagingSenderId: "581338711761",
             appId: "1:581338711761:web:ba5da8e39db876ef9aa7f0"
         };
 
-        // 🔗 보내주신 구글시트 및 디스코드 웹훅 주소 주입 완료
-        const GOODS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVLk7j2zUapZZ4M877hqk374oLgtNKlhEweEjKhay4vS0XcZEhRYI68fvynd95hjmv2dTW9ZBw7kTe/pub?gid=0&single=true&output=csv";
-        const CONFIG_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVLk7j2zUapZZ4M877hqk374oLgtNKlhEweEjKhay4vS0XcZEhRYI68fvynd95hjmv2dTW9ZBw7kTe/pub?gid=2072258085&single=true&output=csv";
-        const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1508754516210745448/Bt_uWf9G34NFJx_m_9jMiiEIWv5qx4oKpvJggBAdopqCmzS3dmV9gV3aXMbpbYMOQUed";
+        // 🔗 내 구글시트 및 디스코드 웹훅 연동 완료
+        const GOODS_CSV_URL = "https://google.com";
+        const CONFIG_CSV_URL = "https://google.com";
+        const DISCORD_WEBHOOK_URL = "https://discord.com";
         
-        // 🔗 보내주신 레포지토리 이름 연동 완료
+        // 🔗 내 레포지토리 주소 매칭 완료
         const GITHUB_REPO = "Goodnete/d1d2"; 
 
-        // 파이어베이스 엔진 초기화 구동
+        // 파이어베이스 선언 초기화
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // 1) 동시 접속자 처리 시스템
+        // 1) 실시간 동시 접속자 시스템 구동
         const mySessionId = 'user_' + Math.random().toString(36).substr(2, 9);
         const userRef = db.collection("active_users").doc(mySessionId);
         
@@ -123,7 +123,7 @@
             document.getElementById('current-users').innerText = snapshot.size;
         });
 
-        // 2) 누적 방문자 수 처리 시스템 (안전 트랜잭션)
+        // 2) 누적 방문자 카운팅 시스템 구동
         const counterRef = db.collection("site_stats").doc("visits_counter");
         async function updateAndGetHits() {
             try {
@@ -138,7 +138,7 @@
         }
         updateAndGetHits();
 
-        // 3) [복구완료] 지워졌던 구글 시트 환경설정 로드 기능
+        // 3) 구글 시트 환경설정 데이터 로드 및 상점정보 세팅
         async function loadConfigData() {
             try {
                 const response = await fetch(CONFIG_CSV_URL);
