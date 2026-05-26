@@ -46,7 +46,7 @@
         .review-section { margin-top: 60px; border-top: 2px dashed #e6dfd3; padding-top: 40px; text-align: left; }
     </style>
 
-    <!-- 🌐 Firebase 웹 호환 레이어 스크립트 선언 -->
+    <!-- 🌐 Firebase 공식 CDN 서치 라이브러리 연동 -->
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
 </head>
@@ -54,12 +54,12 @@
 
     <div class="container">
         <div id="status-area"></div>
-        <h1 id="main-title">로딩 중...</h1>
-        <div class="subtitle" id="sub-title">상점 정보를 불러오고 있습니다.</div>
+        <h1 id="main-title">성역 무역소</h1>
+        <div class="subtitle" id="sub-title">실시간 가격 업데이트 상점</div>
         
         <div class="counter-bar">
             <div class="counter-item">🟢 현재 동시 접속: <span id="current-users" class="counter-num">1</span>명</div>
-            <div class="counter-item">📊 누적 방문: <span id="total-hits" class="counter-num">로딩 중...</span>명</div>
+            <div class="counter-item">📊 누적 방문: <span id="total-hits" class="counter-num">1</span>명</div>
         </div>
 
         <div class="notice-bar" id="notice-box"></div>
@@ -72,24 +72,24 @@
                 <input type="text" id="selected-item" class="input-field" readonly placeholder="위에서 상품을 선택해 주세요.">
                 <label style="display:block; margin-bottom:5px; font-weight:bold;">배틀태그 또는 연락처</label>
                 <input type="text" id="user-contact" class="input-field" placeholder="예: 홍길동#1234 또는 010-1234-5678">
-                <!-- 🚀 window.sendNotification 호출 방식으로 안전하게 변경 완료 -->
                 <button onclick="window.sendNotification()" style="width:100%; padding:15px; background:#5c4b37; color:#fff; font-weight:bold; border:none; border-radius:4px; cursor:pointer; font-size:1.1rem;">⚡ 최종 구매 신청 (기사에게 즉시 알림)</button>
             </div>
         </div>
 
         <div class="review-section">
             <h3 style="font-size: 1.4rem; color: #5c4b37;">💬 고객 후기 및 방명록</h3>
-            <p style="color: #73675c; font-size: 0.9rem; margin-bottom: 20px;">서비스를 이용하신 후 소중한 한 줄 평을 남겨주세요! (깃허브 로그인이 필요합니다)</p>
+            <p style="color: #73675c; font-size: 0.9rem; margin-bottom: 20px;">서비스를 이용하신 후 소중 한 줄 평을 남겨주세요! (깃허브 로그인이 필요합니다)</p>
             <div id="comment-box"></div>
         </div>
     </div>
 
-    <div id="imageModal" class="modal" onclick="closeModal()">
-        <span class="close" onclick="closeModal()">&times;</span>
+    <div id="imageModal" class="modal" onclick="window.closeModal()">
+        <span class="close" onclick="window.closeModal()">&times;</span>
         <img class="modal-content" id="imgPopup">
     </div>
 
     <script>
+        // 🔗 파이어베이스 환경 변수 바인딩
         const firebaseConfig = {
             apiKey: "AIzaSyD36u6bSrzrhgDRasi_gd0PtiVIYNdrx0M",
             authDomain: "://firebaseapp.com",
@@ -99,38 +99,43 @@
             appId: "1:581338711761:web:ba5da8e39db876ef9aa7f0"
         };
 
+        // 🔗 [교정완료] 한 줄로 깔끔하게 정리된 데이터 소스 주소 목록
         const GOODS_CSV_URL = "https://google.com";
         const CONFIG_CSV_URL = "https://google.com";
         const DISCORD_WEBHOOK_URL = "https://discord.com";
         const GITHUB_REPO = "Goodnete/d1d2"; 
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        try {
+            firebase.initializeApp(firebaseConfig);
+            var db = firebase.firestore();
 
-        const mySessionId = 'user_' + Math.random().toString(36).substr(2, 9);
-        const userRef = db.collection("active_users").doc(mySessionId);
-        
-        userRef.set({ timestamp: new Date() }).then(() => {
-            window.addEventListener('beforeunload', () => { userRef.delete(); });
-        });
+            var mySessionId = 'user_' + Math.random().toString(36).substr(2, 9);
+            var userRef = db.collection("active_users").doc(mySessionId);
+            
+            userRef.set({ timestamp: new Date() }).then(function() {
+                window.addEventListener('beforeunload', function() { userRef.delete(); });
+            });
 
-        db.collection("active_users").onSnapshot((snapshot) => {
-            document.getElementById('current-users').innerText = snapshot.size;
-        });
+            db.collection("active_users").onSnapshot(function(snapshot) {
+                document.getElementById('current-users').innerText = snapshot.size;
+            });
 
-        const counterRef = db.collection("site_stats").doc("visits_counter");
-        async function updateAndGetHits() {
-            try {
-                await db.runTransaction(async (transaction) => {
-                    const sfDoc = await transaction.get(counterRef);
-                    if (!sfDoc.exists) { transaction.set(counterRef, { count: 1 }); } 
-                    else { transaction.update(counterRef, { count: sfDoc.data().count + 1 }); }
-                });
-                const finalDoc = await counterRef.get();
-                document.getElementById('total-hits').innerText = finalDoc.data().count;
-            } catch (e) { document.getElementById('total-hits').innerText = "1"; }
+            var counterRef = db.collection("site_stats").doc("visits_counter");
+            async function updateAndGetHits() {
+                try {
+                    await db.runTransaction(async function(transaction) {
+                        var sfDoc = await transaction.get(counterRef);
+                        if (!sfDoc.exists) { transaction.set(counterRef, { count: 1 }); } 
+                        else { transaction.update(counterRef, { count: sfDoc.data().count + 1 }); }
+                    });
+                    var finalDoc = await counterRef.get();
+                    document.getElementById('total-hits').innerText = finalDoc.data().count;
+                } catch (e) { console.log(e); }
+            }
+            updateAndGetHits();
+        } catch (e) {
+            console.error("Firebase 로딩 실패, 기본 모드로 전환:", e);
         }
-        updateAndGetHits();
 
         async function loadConfigData() {
             try {
@@ -154,7 +159,3 @@
                         if (value === "영업중") {
                             statusArea.innerHTML = '<div class="status-badge status-on"><span class="dot"></span>기사 실시간 대기 중 (즉시 가능)</div>';
                         } else {
-                            statusArea.innerHTML = '<div class="status-badge status-off"><span class="dot"></span>현재 부재 중 (예약 접수 가능)</div>';
-                        }
-                    }
-                });
