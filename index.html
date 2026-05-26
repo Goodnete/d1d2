@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>디아블로 4 상점</title>
+    <style>
+        body { background-color: #110f10; color: #d1c4b1; font-family: 'Noto Sans KR', sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; text-align: center; }
+        
+        /* 구글 시트에서 실시간으로 바뀔 제목 스타일 */
+        h1 { color: #9c2a2a; text-shadow: 0 0 10px rgba(156, 42, 42, 0.7); font-size: 2.5rem; margin-bottom: 5px; }
+        .subtitle { color: #8a8073; font-size: 1.1rem; margin-bottom: 20px; }
+        
+        /* 실시간 공지사항 바 스타일 */
+        .notice-bar { background: #3a1515; color: #ffcccc; padding: 12px; border-radius: 6px; margin-bottom: 30px; font-weight: bold; border: 1px solid #9c2a2a; display: none; }
+        
+        .section-title { font-size: 1.5rem; color: #bda37e; border-bottom: 2px solid #3d352b; padding-bottom: 10px; margin-top: 40px; text-align: left; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-top: 20px; }
+        .card { background: #1c1816; border: 1px solid #3d352b; border-radius: 6px; padding: 20px; text-align: left; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-5px); border-color: #9c2a2a; }
+        .card h3 { margin-top: 0; color: #ebd1b0; font-size: 1.2rem; }
+        .price { font-size: 1.3rem; color: #ffcc00; font-weight: bold; margin: 15px 0; }
+        .tag { display: inline-block; background: #3a1515; color: #ff6666; font-size: 0.8rem; padding: 3px 8px; border-radius: 4px; margin-bottom: 10px; width: fit-content; }
+        .btn-buy { background: #9c2a2a; color: white; border: none; padding: 10px; width: 100%; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        .btn-buy:hover { background: #bd3333; }
+        .cta-box { background: #1c1816; border: 2px dashed #9c2a2a; padding: 30px; margin-top: 40px; border-radius: 8px; }
+        .input-field { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #3d352b; background: #110f10; color: #fff; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- 구글 시트 데이터가 채워질 공간 -->
+        <h1 id="main-title">로딩 중...</h1>
+        <div class="subtitle" id="sub-title">상점 정보를 불러오고 있습니다.</div>
+        
+        <!-- 실시간 알림/공지 사항 -->
+        <div class="notice-bar" id="notice-box"></div>
+
+        <div class="section-title">🔮 버스 / 런 서비스</div>
+        <div class="grid" id="bus-list"></div>
+
+        <div class="section-title">⚔️ 장비 및 부적 세트 판매</div>
+        <div class="grid" id="item-list"></div>
+
+        <div class="cta-box">
+            <h2>🛒 실시간 구매 접수</h2>
+            <p style="color: #8a8073; margin-bottom: 20px;">원하는 상품의 [구입 신청]을 누르면 아래에 자동 입력됩니다.</p>
+            <div style="max-width: 400px; margin: 0 auto; text-align: left;">
+                <label style="display:block; margin-bottom:5px;">선택한 상품</label>
+                <input type="text" id="selected-item" class="input-field" readonly placeholder="위에서 상품을 선택해 주세요.">
+                <label style="display:block; margin-bottom:5px;">배틀태그 또는 연락처</label>
+                <input type="text" id="user-contact" class="input-field" placeholder="예: 홍길동#1234 또는 010-1234-5678">
+                <button onclick="sendNotification()" style="width:100%; padding:15px; background:#ebd1b0; color:#110f10; font-weight:bold; border:none; border-radius:4px; cursor:pointer; font-size:1.1rem;">⚡ 최종 구매 신청 (기사에게 즉시 알림)</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ 각 시트에서 추출한 2개의 CSV 주소를 정확히 넣어주세요!
+        const GOODS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVLk7j2zUapZZ4M877hqk374oLgtNKlhEweEjKhay4vS0XcZEhRYI68fvynd95hjmv2dTW9ZBw7kTe/pub?gid=0&single=true&output=csv";
+        const CONFIG_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVLk7j2zUapZZ4M877hqk374oLgtNKlhEweEjKhay4vS0XcZEhRYI68fvynd95hjmv2dTW9ZBw7kTe/pub?gid=2072258085&single=true&output=csv";
+        const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1508754548221542431/V3vER64jQXutay3CyBJyuOpTyno4PMv6mTH4oLaRzsEWw4I5mG4WlJEKvQ3ha4JyP4vy";
+
+        // 1. 상점 환경설정 데이터 로드 함수
+        async function loadConfigData() {
+            try {
+                const response = await fetch(CONFIG_CSV_URL);
+                const data = await response.text();
+                const rows = data.split("\n").slice(1);
+                
+                rows.forEach(row => {
+                    const columns = row.split(",");
+                    if (columns.length < 2) return;
+                    const key = columns[0].trim();
+                    const value = columns[1].trim();
+
+                    if (key === "shop_name") document.getElementById('main-title').innerText = value;
+                    if (key === "shop_sub") document.getElementById('sub-title').innerText = value;
+                    if (key === "notice" && value) {
+                        const noticeBox = document.getElementById('notice-box');
+                        noticeBox.innerText = "📢 공지: " + value;
+                        noticeBox.style.display = "block"; // 내용이 있으면 표시
+                    }
+                });
+            } catch (error) {
+                console.error("설정 로드 실패:", error);
+            }
+        }
+
+        // 2. 상품 데이터 로드 함수
+        async function loadShopData() {
+            try {
+                const response = await fetch(GOODS_CSV_URL);
+                const data = await response.text();
+                const rows = data.split("\n").slice(1); 
+                
+                const busList = document.getElementById('bus-list');
+                const itemList = document.getElementById('item-list');
+                busList.innerHTML = '';
+                itemList.innerHTML = '';
+
+                rows.forEach(row => {
+                    const columns = row.split(",");
+                    if (columns.length < 4) return;
+
+                    const type = columns[0].trim();
+                    const title = columns[1].trim();
+                    const desc = columns[2].trim();
+                    const price = columns[3].trim();
+
+                    const cardHtml = `
+                        <div class="card">
+                            <div>
+                                <span class="tag">${type}</span>
+                                <h3>${title}</h3>
+                                <p style="font-size:0.9rem; color:#8a8073;">${desc}</p>
+                            </div>
+                            <div>
+                                <p class="price">${price}</p>
+                                <button class="btn-buy" onclick="selectItem('${title} (${price})')">구입 신청</button>
+                            </div>
+                        </div>
+                    `;
+
+                    if (type === "버스") busList.innerHTML += cardHtml;
+                    else if (type === "아이템") itemList.innerHTML += cardHtml;
+                });
+            } catch (error) {
+                console.error("상품 로드 실패:", error);
+            }
+        }
+
+        function selectItem(itemInfo) {
+            document.getElementById('selected-item').value = itemInfo;
+            document.querySelector('.cta-box').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function sendNotification() {
+            const item = document.getElementById('selected-item').value;
+            const contact = document.getElementById('user-contact').value.trim();
+            const shopName = document.getElementById('main-title').innerText;
+
+            if (!item || item.includes("선택")) { alert("구입하실 상품을 선택해 주세요!"); return; }
+            if (!contact) { alert("연락처를 입력해 주세요!"); return; }
+
+            const discordMessage = {
+                content: `🔔 **[${shopName} - 신규 주문]**\n\n📌 **상품:** ${item}\n👤 **연락처:** ${contact}\n⏱️ **시간:** ${new Date().toLocaleString('ko-KR')}`
+            };
+
+            try {
+                const response = await fetch(DISCORD_WEBHOOK_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(discordMessage)
+                });
+                if (response.ok) {
+                    alert("신청 완료! 디스코드로 기사에게 실시간 알림이 전송되었습니다.");
+                    document.getElementById('user-contact').value = '';
+                }
+            } catch (error) {
+                alert("오류가 발생했습니다.");
+            }
+        }
+
+        // 페이지가 열릴 때 제목 설정과 상품을 동시에 로드
+        window.onload = function() {
+            loadConfigData();
+            loadShopData();
+        };
+    </script>
+</body>
+</html>
