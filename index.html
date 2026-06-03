@@ -80,57 +80,59 @@
 
     <script>
         const FORMSPREE_SECURE_URL = 'https://formspree.io/f/maqzwlzz'; 
-        const SHEET_KEY = '1LR8lOlX9cDIz8rXWlyHWJgowEhoLcSeCyeZucLOitUg';
         
-        const URL_SHEET1 = `https://google.com{SHEET_KEY}/gviz/tq?tqx=out:json&sheet=Sheet1`; 
-        const URL_SHEET2 = `https://google.com{SHEET_KEY}/gviz/tq?tqx=out:json&sheet=Sheet2`; 
+        // ⚠️ 따옴표 내부에 방금 추출한 시트별 복사 주소(.csv 링크)를 각각 정확히 붙여넣어 주세요!
+        const URL_CSV_SHEET1 = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSCMxXYlK_oQcmQvgfKZZfdm0jgBtU9-z_Zu7RDPxTPLUl2bJ3amGjzpOiuiT9MH-wD_klSUkynKpvD/pub?gid=0&single=true&output=csv'; 
+        const URL_CSV_SHEET2 = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSCMxXYlK_oQcmQvgfKZZfdm0jgBtU9-z_Zu7RDPxTPLUl2bJ3amGjzpOiuiT9MH-wD_klSUkynKpvD/pub?gid=688070023&single=true&output=csv'; 
 
-        let sheet1Rows = null; 
-        let sheet2Rows = null;
+        let sheet1Data = null; 
+        let sheet2Data = null;
 
-        function parseGoogleJson(text) {
-            try {
-                const start = text.indexOf('{');
-                const end = text.lastIndexOf('}') + 1;
-                const json = JSON.parse(text.substring(start, end));
-                return json.table.rows;
-            } catch (e) {
-                return null;
-            }
+        // CSV 문자열을 2차원 배열로 안전하게 파싱하는 함수
+        function parseCSV(text) {
+            const lines = text.split('\n');
+            return lines.map(line => {
+                // 쉼표로 분리하되 큰따옴표 안의 쉼표는 무시하는 정규식
+                const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || line.split(',');
+                return matches.map(val => val.replace(/^"|"$/g, '').trim());
+            });
         }
 
         function renderInterface() {
-            if (!sheet1Rows || !sheet2Rows) return;
+            if (!sheet1Data || !sheet2Data) return;
 
-            // 1. 상태 바 처리 (Sheet1의 2행[인덱스 0]의 A열[인덱스 0])
-            const firstDataRow = sheet1Rows[0];
-            const currentStatus = firstDataRow?.c[0]?.v ? String(firstDataRow.c[0].v).toUpperCase().trim() : 'OFF';
+            // 1. Sheet1 데이터 매핑 (2행 [1번 줄]의 A열 [0번 칸])
+            const targetRow1 = sheet1Data[1];
+            const currentStatus = targetRow1 && targetRow1[0] ? targetRow1[0].toUpperCase() : 'OFF';
             
-            // Sheet2의 4행[인덱스 3]의 B열[인덱스 1] 상태문구 매핑
-            const customStatusText = sheet2Rows[3]?.c[1]?.v || null;
-            const defaultText = currentStatus === 'ON' ? '🟢 영업 중' : '🔴 부재 중';
-            
+            // 2. Sheet2 데이터 매핑 (1행=타이틀, 2행=한줄소개, 3행=공지사항, 4행=상태문구) -> 모두 B열 [1번 칸]
+            const titleValue = (sheet2Data[0] && sheet2Data[0][1]) ? sheet2Data[0][1] : '레스너 SHOP';
+            const subtitleValue = (sheet2Data[1] && sheet2Data[1][1]) ? sheet2Data[1][1] : '아이템 거래 플랫폼';
+            const noticeValue = (sheet2Data[2] && sheet2Data[2][1]) ? sheet2Data[2][1] : '공지사항이 없습니다.';
+            const customStatusText = (sheet2Data[3] && sheet2Data[3][1]) ? sheet2Data[3][1] : null;
+
+            // 상단 상태 바 조율
             const statusBar = document.getElementById('status-bar');
-            statusBar.innerText = customStatusText || defaultText;
+            statusBar.innerText = customStatusText || (currentStatus === 'ON' ? '🟢 영업 중' : '🔴 부재 중');
             statusBar.className = (currentStatus === 'ON') ? "status-bar on" : "status-bar off";
 
-            // 2. 상점 타이틀 컴포넌트 데이터 바인딩 (Sheet2의 B열[인덱스 1] 값들 매핑)
-            document.getElementById('site-title').innerText = sheet2Rows[0]?.c[1]?.v || '레스너 SHOP';
-            document.getElementById('site-subtitle').innerText = sheet2Rows[1]?.c[1]?.v || '';
-            document.getElementById('site-notice').innerText = sheet2Rows[2]?.c[1]?.v || '공지사항이 없습니다.';
+            // 상단 텍스트 바인딩
+            document.getElementById('site-title').innerText = titleValue;
+            document.getElementById('site-subtitle').innerText = subtitleValue;
+            document.getElementById('site-notice').innerText = noticeValue;
 
-            // 3. 상품 목록 레이아웃 동적 바인딩 (Sheet1 매핑)
+            // 3. 상품 목록 렌더링 (Sheet1 데이터 기반, 2행부터 순회)
             const container = document.getElementById('menu-container');
             container.innerHTML = ''; 
 
-            for (let i = 0; i < sheet1Rows.length; i++) {
-                const row = sheet1Rows[i];
-                if (!row || !row.c) continue;
+            for (let i = 1; i < sheet1Data.length; i++) {
+                const row = sheet1Data[i];
+                if (!row || row.length < 2) continue;
 
-                // 시트 구조 정밀 매핑 (B열: 이름[1], C열: 가격[2], D열: 사진URL[3])
-                const name = row.c[1]?.v;  
-                const price = row.c[2]?.v; 
-                const img = row.c[3]?.v || 'https://placeholder.com'; 
+                // CSV 구조 매핑: A열[0]=접속상태, B열[1]=이름, C열[2]=가격, D열[3]=사진URL
+                const name = row[1];  
+                const price = row[2]; 
+                const img = row[3] || 'https://placeholder.com'; 
 
                 if (!name || name === "이름") continue; 
 
@@ -146,17 +148,17 @@
             }
         }
 
-        // Sheet2 (상점 정보) 데이터 수신
-        fetch(URL_SHEET2).then(res => res.text()).then(text => {
-            sheet2Rows = parseGoogleJson(text);
+        // Sheet2 (상점 메타 정보 CSV) 로드
+        fetch(URL_CSV_SHEET2).then(res => res.text()).then(text => {
+            sheet2Data = parseCSV(text);
             renderInterface();
-        }).catch(err => console.error("상점 정보 수신 실패:", err));
+        }).catch(err => console.error("Sheet2 CSV 로드 실패:", err));
 
-        // Sheet1 (상품 목록) 데이터 수신
-        fetch(URL_SHEET1).then(res => res.text()).then(text => {
-            sheet1Rows = parseGoogleJson(text);
+        // Sheet1 (상품 리스트 CSV) 로드
+        fetch(URL_CSV_SHEET1).then(res => res.text()).then(text => {
+            sheet1Data = parseCSV(text);
             renderInterface();
-        }).catch(err => console.error("상품 목록 수신 실패:", err));
+        }).catch(err => console.error("Sheet1 CSV 로드 실패:", err));
 
         function sendOrder(menuName, menuPrice) {
             const confirmOrder = confirm(`[${menuName}] 상품을 구매 신청하시겠습니까?`);
@@ -167,7 +169,7 @@
                 body: JSON.stringify({ "상점명": siteName, "신청상품": menuName, "금액": isNaN(Number(menuPrice)) ? menuPrice : Number(menuPrice).toLocaleString() + '원', "시간": new Date().toLocaleString('ko-KR') })
             }).then(res => {
                 if (res.ok) alert('구매 요청이 안전하게 전송되었습니다!');
-                else alert('Formspree 오류가 발생했습니다. 메일 인증 상태를 확인해 주세요.');
+                else alert('Formspree 오류가 발생했습니다. 대시보드를 확인하세요.');
             });
         }
         window.addEventListener('keydown', function (e) { if (e.ctrlKey && (e.keyCode === 67 || e.keyCode === 86 || (e.shiftKey && e.keyCode === 73))) { e.preventDefault(); return false; } });
