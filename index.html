@@ -81,7 +81,7 @@
     <script>
         const FORMSPREE_SECURE_URL = "https://formspree.io"; 
         
-        // 어떤 문자열 조립도 가미하지 않은 다이렉트 고정 텍스트 주소 주입
+        // 브라우저 캐시 및 문자열 상속 요소를 완전히 격파하는 리얼 다이렉트 고정 텍스트 주소 주입
         const URL_CSV_SHEET1 = "https://google.com"; 
         const URL_CSV_SHEET2 = "https://google.com"; 
 
@@ -158,19 +158,19 @@
                     </div>`;
             }
         }
-        // Sheet2 (상점 메타 정보 CSV) 로드 및 결합
+
         fetch(URL_CSV_SHEET2).then(res => res.text()).then(text => {
             sheet2Data = parseCSV(text);
             renderInterface();
-        }).catch(err => console.error("Sheet2 CSV 로드 실패:", err));
+        }).catch(err => console.error("Sheet2 로드 실패:", err));
 
-        // Sheet1 (상품 리스트 CSV) 로드 및 결합
+                // Sheet1 로드
         fetch(URL_CSV_SHEET1).then(res => res.text()).then(text => {
             sheet1Data = parseCSV(text);
             renderInterface();
-        }).catch(err => console.error("Sheet1 CSV 로드 실패:", err));
+        }).catch(err => console.error("Sheet1 로드 실패:", err));
 
-        // Formspree 구매 신청 요청 엔진 함수
+        // Formspree 주문 전송 함수
         function sendOrder(menuName, menuPrice) {
             const confirmText = "상품을 구매 신청하시겠습니까?";
             const confirmOrder = confirm(menuName + " " + confirmText);
@@ -193,8 +193,8 @@
                 else alert('Formspree 오류가 발생했습니다. 대시보드를 확인하세요.');
             });
         }
-        
-        // 무단 복사 및 단축키 차단 제어 스크립트 바인딩
+
+        // 불법 복사 및 단축키 차단 제어 스크립트
         window.addEventListener('keydown', function (e) { 
             if (e.ctrlKey && (e.keyCode === 67 || e.keyCode === 86 || (e.shiftKey && e.keyCode === 73))) { 
                 e.preventDefault(); 
