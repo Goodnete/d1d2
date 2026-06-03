@@ -79,27 +79,40 @@
     </div>
 
     <script>
-        const FORMSPREE_SECURE_URL = 'https://formspree.io/f/maqzwlzz'; 
+        const FORMSPREE_SECURE_URL = 'https://formspree.io'; 
 
-        // 주소 오염을 방지하기 위해 완전한 고정 URL 주소로 변경했습니다.
-        const URL_SHEET1 = 'https://google.com';
-        const URL_SHEET2 = 'https://google.com';
-
-        function parseGoogleData(text) {
-            try {
-                const start = text.indexOf('{');
-                const end = text.lastIndexOf('}') + 1;
-                return JSON.parse(text.substring(start, end)).table.rows;
-            } catch (e) { return null; }
-        }
+        // 웹게시 보안 전용 키 셋팅 완료
+        const PUBLISH_KEY = '2PACX-1vSCMxXYIK_oQcmQvgfKZZfdm0jgBtU9-z_Zu7RDPxTPLUi2bJ3amGjzpOiuiT9MHwD_klSUkynKpvD';
+        
+        const URL_SHEET1 = `https://google.com{PUBLISH_KEY}/pubhtml?gid=0`; 
+        const URL_SHEET2 = `https://google.com{PUBLISH_KEY}/pubhtml?gid=688070023`; 
 
         let sheet1Data = null; 
         let sheet2Data = null;
 
+        // 웹게시 HTML 파싱 도우미 고도화
+        function parseHtmlTable(htmlText) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlText, 'text/html');
+            const rows = doc.querySelectorAll('table tbody tr');
+            const result = [];
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                if (cells.length > 0) {
+                    const rowData = Array.from(cells).map(cell => cell.innerText.trim());
+                    result.push(rowData);
+                }
+            });
+            return result;
+        }
+
         function updateStatusBar() {
             if (!sheet1Data || sheet1Data.length === 0) return;
-            const currentStatus = sheet1Data[0]?.c[0]?.v ? String(sheet1Data[0].c[0].v).toUpperCase() : 'OFF';
-            const customStatusText = sheet2Data && sheet2Data[3]?.c[1]?.v ? sheet2Data[3].c[1].v : null;
+            // Sheet1의 첫 번째 상품 행(2행) 데이터 기준 접속상태(A열 -> HTML파싱시 인덱스 0)
+            const currentStatus = String(sheet1Data[0][0]).toUpperCase() || 'OFF'; 
+            
+            // Sheet2의 상태문구(B4 -> 인덱스 3번째 행의 1번째 열)
+            const customStatusText = (sheet2Data && sheet2Data[3]) ? sheet2Data[3][1] : null;
             const defaultText = currentStatus === 'ON' ? '🟢 영업 중' : '🔴 부재 중';
             
             const statusBar = document.getElementById('status-bar');
@@ -112,44 +125,46 @@
             }
         }
 
-        // Sheet2 (상점 타이틀, 공지사항) 불러오기
-        fetch(URL_SHEET2).then(res => res.text()).then(data => {
-            const rows = parseGoogleData(data);
-            if(!rows || rows.length === 0) return; 
+        // Sheet2 (상점 타이틀, 공지사항) 연동 및 처리
+        fetch(URL_SHEET2).then(res => res.text()).then(html => {
+            const rows = parseHtmlTable(html);
+            if(!rows || rows.length === 0) return;
             sheet2Data = rows;
             
-            document.getElementById('site-title').innerText = rows[0]?.c[1]?.v || '레스너 SHOP';
-            document.getElementById('site-subtitle').innerText = rows[1]?.c[1]?.v || '';
-            document.getElementById('site-notice').innerText = rows[2]?.c[1]?.v || '공지사항이 없습니다.';
+            // 행 단위 인덱스 매핑 (0행: 타이틀, 1행: 한줄소개, 2행: 공지사항) / 값은 모두 B열(인덱스 1)
+            document.getElementById('site-title').innerText = rows[0][1] || '레스너 SHOP';
+            document.getElementById('site-subtitle').innerText = rows[1][1] || '';
+            document.getElementById('site-notice').innerText = rows[2][1] || '공지사항이 없습니다.';
             updateStatusBar();
         }).catch(err => console.error("상점 정보 로드 실패:", err));
 
-        // Sheet1 (상품 목록) 불러오기
-        fetch(URL_SHEET1).then(res => res.text()).then(data => {
-            const rows = parseGoogleData(data);
-            if(!rows || rows.length === 0) return; 
-            sheet1Data = rows; 
+        // Sheet1 (상품 목록) 연동 및 처리
+        fetch(URL_SHEET1).then(res => res.text()).then(html => {
+            const rows = parseHtmlTable(html);
+            if(!rows || rows.length === 0) return;
+            sheet1Data = rows;
             updateStatusBar();
             
             const container = document.getElementById('menu-container');
             container.innerHTML = ''; 
             
-            for(let i = 1; i < rows.length; i++) {
-                const row = rows[i]; 
-                if (!row || !row.c) continue;
+            // 구글 웹게시 규격에 맞춰 루프 인덱스 정밀 매핑
+            for(let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row) continue;
                 
-                const name = row.c[1]?.v;  
-                const price = row.c[2]?.v; 
-                const img = row.c[3]?.v || 'https://placeholder.com'; 
+                const name = row[1];  // B열: 이름
+                const price = row[2]; // C열: 가격
+                const img = row[3] || 'https://placeholder.com'; // D열: 사진URL
                 
-                if (!name) continue; 
+                if (!name || name === "이름") continue; // 헤더행 강제 패스
                 
                 container.innerHTML += `
                     <div class="menu-card">
                         <img src="${img}" class="menu-img" alt="${name}" oncontextmenu="return false;" ondragstart="return false;">
                         <div class="menu-info">
                             <p class="menu-name" title="${name}">${name}</p>
-                            <p class="menu-price">${Number(price).toLocaleString()} 원</p>
+                            <p class="menu-price">${isNaN(Number(price)) ? price : Number(price).toLocaleString() + ' 원'}</p>
                             <button class="buy-btn" onclick="sendOrder('${name}', '${price}')">즉시 구매 요청</button>
                         </div>
                     </div>`;
@@ -162,13 +177,8 @@
             const siteName = document.getElementById('site-title').innerText;
             fetch(FORMSPREE_SECURE_URL, {
                 method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify({ "상점명": siteName, "신청상품": menuName, "금액": `${Number(menuPrice).toLocaleString()}원`, "시간": new Date().toLocaleString('ko-KR') })
+                body: JSON.stringify({ "상점명": siteName, "신청상품": menuName, "금액": isNaN(Number(menuPrice)) ? menuPrice : Number(menuPrice).toLocaleString() + '원', "시간": new Date().toLocaleString('ko-KR') })
             }).then(res => {
                 if (res.ok) alert('구매 요청이 안전하게 전송되었습니다!');
                 else alert('Formspree 오류가 발생했습니다. 이메일 활성화 상태를 확인해 주세요.');
-            });
-        }
-        window.addEventListener('keydown', function (e) { if (e.ctrlKey && (e.keyCode === 67 || e.keyCode === 86 || (e.shiftKey && e.keyCode === 73))) { e.preventDefault(); return false; } });
-    </script>
-</body>
-</html>
+});}window.addEventListener('keydown', function (e) { if (e.ctrlKey && (e.keyCode === 67 || e.keyCode === 86 || (e.shiftKey && e.keyCode === 73))) { e.preventDefault(); return false; } });
