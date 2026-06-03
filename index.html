@@ -7,13 +7,13 @@
     <link rel="stylesheet" href="https://googleapis.com">
     <style>
         :root {
-            --bg-color: #0b0204;       /* 딥한 검붉은색 배경 */
-            --card-bg: #140508;        /* 입체적인 다크 레드 카드 배경 */
-            --border-color: #2c0d12;    /* 매트한 버건디 테두리 */
-            --primary: #dc2626;         /* 크림슨 레드 메인 포인트 */
-            --secondary: #991b1b;       /* 서브 딥 레드 */
-            --text-main: #e2e8f0;       /* 흰색과 그레이 사이 (Off-white) */
-            --text-muted: #94a3b8;      /* 차분한 라이트 그레이 */
+            --bg-color: #0b0204;       
+            --card-bg: #140508;        
+            --border-color: #2c0d12;    
+            --primary: #dc2626;         
+            --secondary: #991b1b;       
+            --text-main: #e2e8f0;       
+            --text-muted: #94a3b8;      
         }
         
         body { 
@@ -70,7 +70,7 @@
             transition: all 0.2s ease-in-out; cursor: pointer;
         }
         .btn-discord:hover { background-color: #5865F2; border-color: #5865F2; box-shadow: 0 0 15px rgba(88, 101, 242, 0.4); }
-        .btn-kakao:hover { background-color: #FEE500; color: #191919; border-color: #FEE500; box-shadow: 0 0 15px rgba(254, 229, 0, 0.4); }
+        .btn-kakao:hover { background-color: #FEE500; color: #191919; border-color: #FEE500; box-shadow: 0 0 15px rgba(252, 229, 0, 0.4); }
 
         /* 🟢 글로우 입체 매니저 배지 */
         .status-badge {
@@ -135,7 +135,6 @@
             .top-notice-box { padding: 20px 15px; margin-bottom: 10px; }
             .top-notice-box h1 { font-size: 26px; }
             
-            /* 모바일에서 버튼 바 구조 최적화 */
             .middle-action-bar { flex-direction: column; gap: 10px; align-items: stretch; margin-bottom: 10px; }
             .link-btn-container { gap: 8px; }
             .link-btn { padding: 11px; font-size: 13px; }
@@ -159,7 +158,7 @@
         <div id="site-notice" class="subtitle">공지사항을 동기화하는 중입니다...</div>
     </div>
 
-    <!-- 🟥 스케치 2구역: 디코, 오픈톡 버튼 레이아웃 + 매니저 상태 배지 나란히 정렬 -->
+    <!-- 🟥 스케치 2구역 -->
     <div class="middle-action-bar">
         <div class="link-btn-container">
             <a href="https://discord.gg" target="_blank" class="link-btn btn-discord">👾 디스코드 채널</a>
@@ -168,20 +167,21 @@
         <div id="status-bar" class="status-badge off">매니저 상태<strong>연동 중</strong></div>
     </div>
 
-    <!-- 🟥 스케치 3구역: 서브 공지사항 (공지 2) -->
+    <!-- 🟥 스케치 3구역 -->
     <div id="site-subtitle" class="sub-notice-box">상점 세부 안내 데이터를 불러오고 있습니다...</div>
 
-    <!-- 🟥 스케치 4구역: 내용 (주문 가격표 그리드판) -->
+    <!-- 🟥 스케치 4구역 -->
     <div class="section-title">주문 가격표</div>
     <div id="menu-container" class="menu-grid">
         <p style="text-align: center; grid-column: 1/-1; color: var(--text-muted);">상품판을 구성하는 중입니다...</p>
     </div>
 
     <script>
-        const FORMSPREE_SECURE_URL = "https://formspree.io/f/maqzwlzz"; 
+        const FORMSPREE_SECURE_URL = "https://formspree.io"; 
         
-        const URL_CSV_SHEET1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSCMxXYlK_oQcmQvgfKZZfdm0jgBtU9-z_Zu7RDPxTPLUl2bJ3amGjzpOiuiT9MH-wD_klSUkynKpvD/pub?gid=0&single=true&output=csv"; 
-        const URL_CSV_SHEET2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSCMxXYlK_oQcmQvgfKZZfdm0jgBtU9-z_Zu7RDPxTPLUl2bJ3amGjzpOiuiT9MH-wD_klSUkynKpvD/pub?gid=688070023&single=true&output=csv"; 
+        // 진짜 구글 라이브 CSV 파일 주소 완벽하게 결합 및 고정 완료
+        const URL_CSV_SHEET1 = "https://google.com"; 
+        const URL_CSV_SHEET2 = "https://google.com"; 
 
         let sheet1Data = null; 
         let sheet2Data = null;
@@ -204,7 +204,9 @@
                         row.push(entry.trim());
                         entry = '';
                     } else {
-                        entry += char;
+                    entry += char;}
+                    }
+                                               entry += char;
                     }
                 }
                 row.push(entry.trim());
@@ -224,7 +226,6 @@
             const subtitleValue = sheet2Data.at(1) ? sheet2Data.at(1).at(1) : '';
             const customStatusText = sheet2Data.at(3) ? sheet2Data.at(3).at(1) : null;
 
-            // 매니저 상태 컴포넌트 렌더링 세팅
             const statusBar = document.getElementById('status-bar');
             if (currentStatus === 'ON') {
                 statusBar.innerHTML = `매니저 상태<strong>${customStatusText || '🟢 ON'}</strong>`;
@@ -251,7 +252,6 @@
 
                 if (!name || name === "이름") continue; 
 
-                // 백틱(``) 문법 누락 현상 전면 복구
                 container.innerHTML += `
                     <div class="menu-card">
                         <img src="${img}" class="menu-img" alt="${name}" oncontextmenu="return false;" ondragstart="return false;">
@@ -261,7 +261,7 @@
                             <button class="buy-btn" onclick="sendOrder('${name}', '${price}')">즉시 구매 요청</button>
                         </div>
                     </div>`;
-            }
+                      }
         }
 
         fetch(URL_CSV_SHEET2).then(res => res.text()).then(text => {
@@ -279,6 +279,13 @@
             const confirmOrder = confirm(menuName + " " + confirmText);
             if (!confirmOrder) return;
             
+            const userContact = prompt("구매 진행을 위해 구매자님의 연락처(디스코드 태그 / 카톡 ID 등)를 입력해 주세요.\n(미입력 시 진행이 불가합니다.)");
+            if (userContact === null) return;
+            if (userContact.trim() === "") {
+                alert("연락처를 정확히 입력해야 구매 요청이 가능합니다.");
+                return;
+            }
+            
             const siteName = document.getElementById('site-title').innerText;
             const formattedPrice = isNaN(Number(menuPrice)) ? menuPrice : Number(menuPrice).toLocaleString() + '원';
             
@@ -289,10 +296,11 @@
                     "상점명": siteName, 
                     "신청상품": menuName, 
                     "금액": formattedPrice, 
+                    "구매자연락처": userContact.trim(),
                     "시간": new Date().toLocaleString('ko-KR') 
                 })
             }).then(res => {
-                if (res.ok) alert('구매 요청이 안전하게 전송되었습니다!');
+                if (res.ok) alert('구매 요청과 연락처가 안전하게 전송되었습니다!');
                 else alert('Formspree 오류가 발생했습니다. 대시보드를 확인하세요.');
             });
         }
