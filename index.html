@@ -1,9 +1,69 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>실시간 관리 상점</title>
+    <style>
+        body { 
+            font-family: 'Noto Sans KR', sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background-color: #0d0e12; 
+            color: #ffffff;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        img { -webkit-user-drag: none; user-drag: none; }
+        .status-bar {
+            text-align: center; padding: 12px; border-radius: 30px; font-weight: bold; font-size: 14px; margin-bottom: 35px; transition: all 0.3s ease; letter-spacing: 0.5px;
+        }
+        .status-bar.on { background-color: #064e3b; color: #34d399; box-shadow: 0 0 15px rgba(52, 211, 153, 0.4); border: 1px solid #059669; }
+        .status-bar.off { background-color: #7f1d1d; color: #fca5a5; box-shadow: 0 0 15px rgba(252, 165, 165, 0.4); border: 1px solid #dc2626; }
+        .main-header { text-align: center; margin-bottom: 40px; }
+        .main-header h1 { font-size: 46px; font-weight: 900; margin: 0 0 12px 0; letter-spacing: 2px; color: #a855f7; text-shadow: 0 0 10px rgba(168, 85, 247, 0.6), 0 0 20px rgba(168, 85, 247, 0.2); }
+        .main-header .subtitle { color: #9ca3af; font-size: 16px; margin: 0 0 20px 0; font-weight: 500; }
+        .main-header .notice { color: #06b6d4; font-size: 14px; background: rgba(6, 182, 212, 0.1); padding: 10px 24px; border-radius: 8px; display: inline-block; border: 1px solid rgba(6, 182, 212, 0.4); font-weight: 600; }
+        .section-divider { margin: 45px 0; height: 1px; background: linear-gradient(to right, transparent, #a855f7, #06b6d4, #a855f7, transparent); }
+        .section-title { text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 35px; color: #06b6d4; letter-spacing: 1px; text-shadow: 0 0 8px rgba(6, 182, 212, 0.4); }
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 25px; }
+        .menu-card { background: #161920; border: 1px solid #1f2937; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5); transition: all 0.25s ease-in-out; }
+        .menu-card:hover { transform: translateY(-5px); border-color: #06b6d4; box-shadow: 0 0 15px rgba(6, 182, 212, 0.3); }
+        .menu-card:hover .menu-name { color: #06b6d4; }
+        .menu-img { width: 100%; height: 180px; object-fit: cover; background: #090a0f; border-bottom: 1px solid #1f2937; }
+        .menu-info { padding: 18px; display: flex; flex-direction: column; flex-grow: 1; }
+        .menu-name { font-size: 18px; font-weight: bold; margin: 0 0 10px 0; color: #ffffff; transition: color 0.2s; }
+        .menu-price { font-size: 18px; color: #c084fc; font-weight: 800; margin: 0 0 18px 0; padding-bottom: 14px; border-bottom: 1px dashed #1f2937; }
+        .buy-btn { margin-top: auto; background: linear-gradient(135deg, #a855f7 0%, #6b21a8 100%); color: #ffffff; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; transition: all 0.2s; }
+        .buy-btn:hover { background: linear-gradient(135deg, #c084fc 0%, #a855f7 100%); box-shadow: 0 0 15px rgba(168, 85, 247, 0.6); }
+    </style>
+</head>
+<body oncontextmenu="return false" onselectstart="return false" ondragstart="return false">
+
+    <div id="status-bar" class="status-bar off">구글 스프레드시트 연결 중...</div>
+
+    <div class="main-header">
+        <h1 id="site-title">마켓 로딩 중</h1>
+        <p id="site-subtitle" class="subtitle">시트 데이터 동기화 중...</p>
+        <div id="site-notice" class="notice">공지사항을 가져오는 중입니다.</div>
+    </div>
+
+    <div class="section-divider"></div>
+    <div class="section-title">주문 가격표</div>
+
+    <div id="menu-container" class="menu-grid">
+        <p style="text-align: center; grid-column: 1/-1; color: #6b7280;">상품 리스트를 불러오고 있습니다...</p>
+    </div>
+
     <script>
-        // 1. 전체 주소가 아닌 순수 시트 ID만 입력해야 합니다.
+        // 구글 시트 주소에서 ID 부분만 추출하여 적용했습니다.
         const SHEET_ID = '1LR8lOlX9cDIz8rXWlyHWJgowEhoLcSeCyeZucLOitUg'; 
         const FORMSPREE_SECURE_URL = 'https://formspree.io/f/maqzwlzz'; 
 
-        // 2. 주소 생성 방식 수정 ($ 추가 및 구글 도메인 중복 제거)
+        // 오타 수정 및 올바른 구글 API 주소 매핑
         const URL_SHEET1 = `https://google.com{SHEET_ID}/gviz/tq?tqx=out:json&sheet=Sheet1`;
         const URL_SHEET2 = `https://google.com{SHEET_ID}/gviz/tq?tqx=out:json&sheet=Sheet2`;
 
@@ -19,8 +79,8 @@
 
         function updateStatusBar() {
             if (!sheet1Data || !sheet2Data) return;
-            const currentStatus = sheet1Data[0]?.c[0]?.v || 'OFF';
-            const customStatusText = sheet2Data[0]?.c[0]?.v || (currentStatus.toUpperCase() === 'ON' ? '🟢 영업 중' : '🔴 부재 중');
+            const currentStatus = sheet1Data[1]?.c[3]?.v || 'OFF'; // Sheet1의 특정 셀 구조 기준 (필요시 시트 구조에 맞게 인덱스 수정 필요)
+            const customStatusText = sheet2Data[1]?.c[2]?.v || (currentStatus.toUpperCase() === 'ON' ? '🟢 영업 중' : '🔴 부재 중');
             const statusBar = document.getElementById('status-bar');
             statusBar.innerText = customStatusText;
             if(currentStatus.toUpperCase() === 'ON') { statusBar.className = "status-bar on"; } 
@@ -29,25 +89,36 @@
 
         fetch(URL_SHEET2).then(res => res.text()).then(data => {
             const rows = parseGoogleData(data);
-            if(!rows || rows.length === 0) return; sheet2Data = rows;
-            // 데이터를 안전하게 가져오기 위해 배열 인덱스 구조로 수정
-            document.getElementById('site-title').innerText = rows[0]?.c[0]?.v || '상점';
-            document.getElementById('site-subtitle').innerText = rows[1]?.c[0]?.v || '';
-            document.getElementById('site-notice').innerText = rows[2]?.c[0]?.v || '공지사항이 없습니다.';
+            if(!rows || rows.length === 0) return; 
+            sheet2Data = rows;
+            
+            // 데이터가 있는 첫 번째 행(보통 제목이나 첫 데이터)을 기준으로 텍스트 매핑
+            if(rows[1] && rows[1].c) {
+                document.getElementById('site-title').innerText = rows[1].c[0]?.v || '상점';
+                document.getElementById('site-subtitle').innerText = rows[1].c[1]?.v || '';
+                document.getElementById('site-notice').innerText = rows[1].c[2]?.v || '공지사항이 없습니다.';
+            }
             updateStatusBar();
         }).catch(err => console.error("Sheet2 로드 실패:", err));
 
         fetch(URL_SHEET1).then(res => res.text()).then(data => {
             const rows = parseGoogleData(data);
-            if(!rows || rows.length === 0) return; sheet1Data = rows; updateStatusBar();
+            if(!rows || rows.length === 0) return; 
+            sheet1Data = rows; 
+            updateStatusBar();
+            
             const container = document.getElementById('menu-container');
             container.innerHTML = ''; 
+            
             for(let i = 1; i < rows.length; i++) {
                 const row = rows[i]; 
+                if (!row || !row.c) continue;
+                
                 const name = row.c[0]?.v; 
                 const price = row.c[1]?.v; 
                 const img = row.c[2]?.v || 'https://placeholder.com';
                 if (!name) continue; 
+                
                 container.innerHTML += `<div class="menu-card"><img src="${img}" class="menu-img" alt="${name}" oncontextmenu="return false;" ondragstart="return false;"><div class="menu-info"><p class="menu-name">${name}</p><p class="menu-price">${Number(price).toLocaleString()} 원</p><button class="buy-btn" onclick="sendOrder('${name}', '${price}')">즉시 구매 요청</button></div></div>`;
             }
         }).catch(err => console.error("Sheet1 로드 실패:", err));
@@ -66,3 +137,5 @@
         }
         window.addEventListener('keydown', function (e) { if (e.ctrlKey && (e.keyCode === 67 || e.keyCode === 86 || (e.shiftKey && e.keyCode === 73))) { e.preventDefault(); return false; } });
     </script>
+</body>
+</html>
