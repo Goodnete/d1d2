@@ -4,14 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>실시간 관리 상점</title>
+    <link rel="stylesheet" href="https://googleapis.com">
     <style>
+        :root {
+            --bg-color: #0b0204;       /* 딥한 검붉은색 배경 */
+            --card-bg: #140508;        /* 입체적인 다크 레드 카드 배경 */
+            --border-color: #2c0d12;    /* 매트한 버건디 테두리 */
+            --primary: #dc2626;         /* 크림슨 레드 메인 포인트 */
+            --secondary: #991b1b;       /* 서브 딥 레드 */
+            --text-main: #e2e8f0;       /* 흰색과 그레이 사이 (Off-white) */
+            --text-muted: #94a3b8;      /* 차분한 라이트 그레이 */
+        }
+        
         body { 
             font-family: 'Noto Sans KR', sans-serif; 
             max-width: 1000px; 
             margin: 0 auto; 
-            padding: 15px; 
-            background-color: #0d0e12; 
-            color: #ffffff;
+            padding: 20px 15px; 
+            background-color: var(--bg-color); 
+            color: var(--text-main);
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
@@ -21,67 +32,154 @@
         *, *:before, *:after { box-sizing: inherit; }
         img { -webkit-user-drag: none; user-drag: none; max-width: 100%; }
 
-        .status-bar {
-            text-align: center; padding: 14px; border-radius: 30px; font-weight: bold; font-size: 14px; margin-bottom: 25px; transition: all 0.3s ease; letter-spacing: 0.5px;
+        /* 🟥 스케치 1구역: 상점명 / 공지사항 박스 */
+        .top-notice-box {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px 20px;
+            text-align: center;
+            margin-bottom: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
-        .status-bar.on { background-color: #064e3b; color: #34d399; box-shadow: 0 0 15px rgba(52, 211, 153, 0.4); border: 1px solid #059669; }
-        .status-bar.off { background-color: #7f1d1d; color: #fca5a5; box-shadow: 0 0 15px rgba(252, 165, 165, 0.4); border: 1px solid #dc2626; }
-        
-        .main-header { text-align: center; margin-bottom: 30px; padding: 0 10px; }
-        .main-header h1 { font-size: 36px; font-weight: 900; margin: 0 0 10px 0; letter-spacing: 1px; color: #a855f7; text-shadow: 0 0 10px rgba(168, 85, 247, 0.6); word-break: keep-all; }
-        .main-header .subtitle { color: #9ca3af; font-size: 15px; margin: 0 0 15px 0; font-weight: 500; word-break: keep-all; }
-        .main-header .notice { color: #06b6d4; font-size: 14px; background: rgba(6, 182, 212, 0.1); padding: 12px 20px; border-radius: 8px; display: inline-block; border: 1px solid rgba(6, 182, 212, 0.4); font-weight: 600; width: 100%; max-width: 650px; word-break: break-all; line-height: 1.5; }
-        
-        .section-divider { margin: 30px 0; height: 1px; background: linear-gradient(to right, transparent, #a855f7, #06b6d4, #a855f7, transparent); }
-        .section-title { text-align: center; font-size: 22px; font-weight: bold; margin-bottom: 25px; color: #06b6d4; letter-spacing: 1px; text-shadow: 0 0 8px rgba(6, 182, 212, 0.4); }
-        
-        .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; padding: 5px; }
-        .menu-card { background: #161920; border: 1px solid #1f2937; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5); transition: all 0.25s ease-in-out; }
-        .menu-card:hover { transform: translateY(-3px); border-color: #06b6d4; box-shadow: 0 0 12px rgba(6, 182, 212, 0.3); }
-        .menu-card:hover .menu-name { color: #06b6d4; }
-        
-        .menu-img { width: 100%; height: 140px; object-fit: cover; background: #090a0f; border-bottom: 1px solid #1f2937; }
-        .menu-info { padding: 12px; display: flex; flex-direction: column; flex-grow: 1; }
-        .menu-name { font-size: 15px; font-weight: bold; margin: 0 0 6px 0; color: #ffffff; transition: color 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .menu-price { font-size: 15px; color: #c084fc; font-weight: 800; margin: 0 0 12px 0; padding-bottom: 8px; border-bottom: 1px dashed #1f2937; }
-        
-        .buy-btn { margin-top: auto; background: linear-gradient(135deg, #a855f7 0%, #6b21a8 100%); color: #ffffff; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
-        .buy-btn:hover { background: linear-gradient(135deg, #c084fc 0%, #a855f7 100%); box-shadow: 0 0 10px rgba(168, 85, 247, 0.6); }
+        .top-notice-box h1 { 
+            font-family: 'Orbitron', 'Noto Sans KR', sans-serif;
+            font-size: 32px; font-weight: 900; margin: 0 0 10px 0; letter-spacing: 1px;
+            color: var(--text-main);
+        }
+        .top-notice-box .subtitle { 
+            color: #ef4444; font-size: 14px; font-weight: 700; 
+            background: rgba(220, 38, 38, 0.1); padding: 8px 16px; 
+            border-radius: 6px; display: inline-block; border: 1px solid rgba(220, 38, 38, 0.25);
+            word-break: break-all; line-height: 1.5; width: 100%; max-width: 750px;
+        }
 
-        @media (max-width: 480px) {
-            body { padding: 10px; }
-            .main-header h1 { font-size: 28px; }
-            .main-header .subtitle { font-size: 14px; }
-            .menu-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-            .menu-img { height: 110px; }
+        /* 🟥 스케치 2구역: 버튼들과 매니저 상태를 나란히 배치 (플렉스 레이아웃) */
+        .middle-action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .link-btn-container { display: flex; gap: 10px; flex-grow: 1; }
+        .link-btn { 
+            flex-grow: 1; text-align: center; display: inline-flex; align-items: center; justify-content: center; 
+            padding: 12px 16px; border-radius: 8px; font-size: 14px; font-weight: 700; 
+            text-decoration: none; color: var(--text-main); background: #1c0a0d; border: 1px solid var(--border-color);
+            transition: all 0.2s ease-in-out; cursor: pointer;
+        }
+        .btn-discord:hover { background-color: #5865F2; border-color: #5865F2; box-shadow: 0 0 15px rgba(88, 101, 242, 0.4); }
+        .btn-kakao:hover { background-color: #FEE500; color: #191919; border-color: #FEE500; box-shadow: 0 0 15px rgba(254, 229, 0, 0.4); }
+
+        /* 🟢 글로우 입체 매니저 배지 */
+        .status-badge {
+            display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 6px 20px; border-radius: 8px; font-size: 11px; font-weight: 500; color: var(--text-muted);
+            background-color: var(--card-bg); border: 1px solid var(--border-color); min-width: 120px; height: 47px;
+        }
+        .status-badge strong { font-size: 14px; font-weight: 900; margin-top: 1px; letter-spacing: 0.5px; }
+        
+        .status-badge.on strong { color: #34d399; text-shadow: 0 0 8px rgba(52, 211, 153, 0.6); }
+        .status-badge.off strong { color: #fca5a5; text-shadow: 0 0 8px rgba(248, 113, 113, 0.6); }
+        
+        /* 🟥 스케치 3구역: 서브 공지 2 박스 */
+        .sub-notice-box {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px 18px;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 25px;
+            line-height: 1.5;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        /* 🟥 스케치 4구역: 내용 (주문 가격표 그리드) */
+        .section-title { 
+            font-family: 'Orbitron', 'Noto Sans KR', sans-serif;
+            font-size: 20px; font-weight: 900; margin: 30px 0 20px 0; color: var(--text-main);
+            letter-spacing: 1px; display: flex; align-items: center; gap: 10px;
+        }
+        .section-title::before { content: ''; display: inline-block; width: 4px; height: 16px; background: var(--primary); border-radius: 2px; }
+        
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; padding: 5px; }
+        .menu-card { 
+            background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; 
+            overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5); 
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        .menu-card:hover { transform: translateY(-4px); border-color: var(--primary); box-shadow: 0 10px 20px rgba(220, 38, 38, 0.15); }
+        .menu-card:hover .menu-name { color: #f87171; }
+        
+        .menu-img { width: 100%; height: 145px; object-fit: cover; background: #070203; border-bottom: 1px solid var(--border-color); }
+        .menu-info { padding: 14px; display: flex; flex-direction: column; flex-grow: 1; }
+        .menu-name { font-size: 15px; font-weight: 700; margin: 0 0 8px 0; color: var(--text-main); transition: color 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .menu-price { font-size: 16px; color: #fca5a5; font-weight: 800; margin: 0 0 14px 0; padding-bottom: 10px; border-bottom: 1px dashed var(--border-color); font-family: 'Orbitron', sans-serif; }
+        
+        .buy-btn { 
+            margin-top: auto; background: linear-gradient(135deg, #250b10 0%, #190609 100%); 
+            color: var(--text-main); border: 1px solid var(--border-color); padding: 10px; border-radius: 8px; 
+            cursor: pointer; font-weight: 700; font-size: 13px; transition: all 0.2s ease; 
+        }
+        .menu-card:hover .buy-btn {
+            background: linear-gradient(135deg, var(--primary) 0%, #991b1b 100%);
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+        }
+
+        /* 📱 모바일 디바이스 가로 2열 대치 */
+        @media (max-width: 600px) {
+            body { padding: 15px 10px; }
+            .top-notice-box { padding: 20px 15px; margin-bottom: 10px; }
+            .top-notice-box h1 { font-size: 26px; }
+            
+            /* 모바일에서 버튼 바 구조 최적화 */
+            .middle-action-bar { flex-direction: column; gap: 10px; align-items: stretch; margin-bottom: 10px; }
+            .link-btn-container { gap: 8px; }
+            .link-btn { padding: 11px; font-size: 13px; }
+            .status-badge { height: 45px; width: 100%; }
+            .sub-notice-box { padding: 12px; font-size: 12px; margin-bottom: 15px; }
+
+            .menu-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .menu-img { height: 115px; }
             .menu-info { padding: 10px; }
             .menu-name { font-size: 14px; }
             .menu-price { font-size: 14px; }
-            .buy-btn { padding: 8px; font-size: 12px; }
+            .buy-btn { padding: 9px; font-size: 12px; }
         }
     </style>
 </head>
 <body oncontextmenu="return false" onselectstart="return false" ondragstart="return false">
 
-    <div id="status-bar" class="status-bar off">구글 스프레드시트 연동 중...</div>
-
-    <div class="main-header">
+    <!-- 🟥 스케치 1구역: 상점명 및 공지사항 -->
+    <div class="top-notice-box">
         <h1 id="site-title">마켓 로딩 중</h1>
-        <p id="site-subtitle" class="subtitle">데이터 동기화 중...</p>
-        <div id="site-notice" class="notice">공지사항을 가져오는 중입니다...</div>
+        <div id="site-notice" class="subtitle">공지사항을 동기화하는 중입니다...</div>
     </div>
 
-    <div class="section-divider"></div>
-    <div class="section-title">주문 가격표</div>
+    <!-- 🟥 스케치 2구역: 디코, 오픈톡 버튼 레이아웃 + 매니저 상태 배지 나란히 정렬 -->
+    <div class="middle-action-bar">
+        <div class="link-btn-container">
+            <a href="https://discord.gg" target="_blank" class="link-btn btn-discord">👾 디스코드 채널</a>
+            <a href="https://kakao.com" target="_blank" class="link-btn btn-kakao">💬 1:1 오픈톡</a>
+        </div>
+        <div id="status-bar" class="status-badge off">매니저 상태<strong>연동 중</strong></div>
+    </div>
 
+    <!-- 🟥 스케치 3구역: 서브 공지사항 (공지 2) -->
+    <div id="site-subtitle" class="sub-notice-box">상점 세부 안내 데이터를 불러오고 있습니다...</div>
+
+    <!-- 🟥 스케치 4구역: 내용 (주문 가격표 그리드판) -->
+    <div class="section-title">주문 가격표</div>
     <div id="menu-container" class="menu-grid">
-        <p style="text-align: center; grid-column: 1/-1; color: #6b7280;">상품 리스트를 불러오고 있습니다...</p>
+        <p style="text-align: center; grid-column: 1/-1; color: var(--text-muted);">상품판을 구성하는 중입니다...</p>
     </div>
 
     <script>
         const FORMSPREE_SECURE_URL = "https://formspree.io/f/maqzwlzz"; 
         
-        // 브라우저 캐시 및 문자열 상속 요소를 완전히 격파하는 리얼 다이렉트 고정 텍스트 주소 주입
         const URL_CSV_SHEET1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSCMxXYlK_oQcmQvgfKZZfdm0jgBtU9-z_Zu7RDPxTPLUl2bJ3amGjzpOiuiT9MH-wD_klSUkynKpvD/pub?gid=0&single=true&output=csv"; 
         const URL_CSV_SHEET2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSCMxXYlK_oQcmQvgfKZZfdm0jgBtU9-z_Zu7RDPxTPLUl2bJ3amGjzpOiuiT9MH-wD_klSUkynKpvD/pub?gid=688070023&single=true&output=csv"; 
 
@@ -122,17 +220,23 @@
             const currentStatus = targetRow1 ? String(targetRow1.at(0)).toUpperCase().trim() : 'OFF';
             
             const titleValue = sheet2Data.at(0) ? sheet2Data.at(0).at(1) : '레스너 SHOP';
-            const subtitleValue = sheet2Data.at(1) ? sheet2Data.at(1).at(1) : '';
             const noticeValue = sheet2Data.at(2) ? sheet2Data.at(2).at(1) : '공지사항이 없습니다.';
+            const subtitleValue = sheet2Data.at(1) ? sheet2Data.at(1).at(1) : '';
             const customStatusText = sheet2Data.at(3) ? sheet2Data.at(3).at(1) : null;
 
+            // 매니저 상태 컴포넌트 렌더링 세팅
             const statusBar = document.getElementById('status-bar');
-            statusBar.innerText = customStatusText || (currentStatus === 'ON' ? '🟢 영업 중' : '🔴 부재 중');
-            statusBar.className = (currentStatus === 'ON') ? "status-bar on" : "status-bar off";
+            if (currentStatus === 'ON') {
+                statusBar.innerHTML = `매니저 상태<strong>${customStatusText || '🟢 ON'}</strong>`;
+                statusBar.className = "status-badge on";
+            } else {
+                statusBar.innerHTML = `매니저 상태<strong>${customStatusText || '🔴 OFF'}</strong>`;
+                statusBar.className = "status-badge off";
+            }
 
             document.getElementById('site-title').innerText = titleValue;
-            document.getElementById('site-subtitle').innerText = subtitleValue;
             document.getElementById('site-notice').innerText = noticeValue;
+            document.getElementById('site-subtitle').innerText = subtitleValue;
 
             const container = document.getElementById('menu-container');
             container.innerHTML = ''; 
@@ -147,6 +251,7 @@
 
                 if (!name || name === "이름") continue; 
 
+                // 백틱(``) 문법 누락 현상 전면 복구
                 container.innerHTML += `
                     <div class="menu-card">
                         <img src="${img}" class="menu-img" alt="${name}" oncontextmenu="return false;" ondragstart="return false;">
@@ -164,13 +269,11 @@
             renderInterface();
         }).catch(err => console.error("Sheet2 로드 실패:", err));
 
-                // Sheet1 로드
         fetch(URL_CSV_SHEET1).then(res => res.text()).then(text => {
             sheet1Data = parseCSV(text);
             renderInterface();
         }).catch(err => console.error("Sheet1 로드 실패:", err));
 
-        // Formspree 주문 전송 함수
         function sendOrder(menuName, menuPrice) {
             const confirmText = "상품을 구매 신청하시겠습니까?";
             const confirmOrder = confirm(menuName + " " + confirmText);
@@ -193,14 +296,7 @@
                 else alert('Formspree 오류가 발생했습니다. 대시보드를 확인하세요.');
             });
         }
-
-        // 불법 복사 및 단축키 차단 제어 스크립트
-        window.addEventListener('keydown', function (e) { 
-            if (e.ctrlKey && (e.keyCode === 67 || e.keyCode === 86 || (e.shiftKey && e.keyCode === 73))) { 
-                e.preventDefault(); 
-                return false; 
-            } 
-        });
+        window.addEventListener('keydown', function (e) { if (e.ctrlKey && (e.keyCode === 67 || e.keyCode === 86 || (e.shiftKey && e.keyCode === 73))) { e.preventDefault(); return false; } });
     </script>
 </body>
 </html>
