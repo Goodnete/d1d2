@@ -81,47 +81,66 @@
     <script>
         const FORMSPREE_SECURE_URL = 'https://formspree.io/f/maqzwlzz'; 
         
-        // ⚠️ 따옴표 내부에 방금 추출한 시트별 복사 주소(.csv 링크)를 각각 정확히 붙여넣어 주세요!
+        // ⚠️ 이 두 줄의 작은따옴표(' ') 안에는 질문자님의 구글 CSV 주소를 그대로 복사해서 채워주세요!
         const URL_CSV_SHEET1 = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSCMxXYlK_oQcmQvgfKZZfdm0jgBtU9-z_Zu7RDPxTPLUl2bJ3amGjzpOiuiT9MH-wD_klSUkynKpvD/pub?gid=0&single=true&output=csv'; 
         const URL_CSV_SHEET2 = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSCMxXYlK_oQcmQvgfKZZfdm0jgBtU9-z_Zu7RDPxTPLUl2bJ3amGjzpOiuiT9MH-wD_klSUkynKpvD/pub?gid=688070023&single=true&output=csv'; 
 
         let sheet1Data = null; 
         let sheet2Data = null;
 
-        // CSV 문자열을 2차원 배열로 안전하게 파싱하는 함수
+        // 쉼표 및 따옴표 꼬임 문제를 완벽하게 풀어내는 정밀 CSV 엑셀 해석기
         function parseCSV(text) {
-            const lines = text.split('\n');
-            return lines.map(line => {
-                // 쉼표로 분리하되 큰따옴표 안의 쉼표는 무시하는 정규식
-                const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || line.split(',');
-                return matches.map(val => val.replace(/^"|"$/g, '').trim());
-            });
+            const lines = text.split(/\r?\n/);
+            const result = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                if (!line.trim()) continue;
+                
+                const row = [];
+                let insideQuote = false;
+                let entry = '';
+                
+                for (let j = 0; j < line.length; j++) {
+                    const char = line[j];
+                    if (char === '"') {
+                        insideQuote = !insideQuote;
+                    } else if (char === ',' && !insideQuote) {
+                        row.push(entry.trim());
+                        entry = '';
+                    } else {
+                        entry += char;
+                    }
+                }
+                row.push(entry.trim());
+                result.push(row);
+            }
+            return result;
         }
 
         function renderInterface() {
             if (!sheet1Data || !sheet2Data) return;
 
-            // 1. Sheet1 데이터 매핑 (2행 [1번 줄]의 A열 [0번 칸])
+            // 1. Sheet1 연동 (2행 A열)
             const targetRow1 = sheet1Data[1];
             const currentStatus = targetRow1 && targetRow1[0] ? targetRow1[0].toUpperCase() : 'OFF';
             
-            // 2. Sheet2 데이터 매핑 (1행=타이틀, 2행=한줄소개, 3행=공지사항, 4행=상태문구) -> 모두 B열 [1번 칸]
+            // 2. Sheet2 연동 (1행=타이틀, 2행=소개, 3행=공지사항, 4행=상태문구) -> 전부 B열(index 1)
             const titleValue = (sheet2Data[0] && sheet2Data[0][1]) ? sheet2Data[0][1] : '레스너 SHOP';
-            const subtitleValue = (sheet2Data[1] && sheet2Data[1][1]) ? sheet2Data[1][1] : '아이템 거래 플랫폼';
+            const subtitleValue = (sheet2Data[1] && sheet2Data[1][1]) ? sheet2Data[1][1] : '';
             const noticeValue = (sheet2Data[2] && sheet2Data[2][1]) ? sheet2Data[2][1] : '공지사항이 없습니다.';
             const customStatusText = (sheet2Data[3] && sheet2Data[3][1]) ? sheet2Data[3][1] : null;
 
-            // 상단 상태 바 조율
+            // 상단 디자인 요소 업데이트
             const statusBar = document.getElementById('status-bar');
             statusBar.innerText = customStatusText || (currentStatus === 'ON' ? '🟢 영업 중' : '🔴 부재 중');
             statusBar.className = (currentStatus === 'ON') ? "status-bar on" : "status-bar off";
 
-            // 상단 텍스트 바인딩
             document.getElementById('site-title').innerText = titleValue;
             document.getElementById('site-subtitle').innerText = subtitleValue;
             document.getElementById('site-notice').innerText = noticeValue;
 
-            // 3. 상품 목록 렌더링 (Sheet1 데이터 기반, 2행부터 순회)
+            // 3. 주문판 리스트 컴포넌트 렌더링
             const container = document.getElementById('menu-container');
             container.innerHTML = ''; 
 
@@ -129,7 +148,7 @@
                 const row = sheet1Data[i];
                 if (!row || row.length < 2) continue;
 
-                // CSV 구조 매핑: A열[0]=접속상태, B열[1]=이름, C열[2]=가격, D열[3]=사진URL
+                // A열: 상태, B열: 이름, C열: 가격, D열: 이미지주소
                 const name = row[1];  
                 const price = row[2]; 
                 const img = row[3] || 'https://placeholder.com'; 
@@ -148,31 +167,21 @@
             }
         }
 
-        // Sheet2 (상점 메타 정보 CSV) 로드
+        // Sheet2 로드
         fetch(URL_CSV_SHEET2).then(res => res.text()).then(text => {
             sheet2Data = parseCSV(text);
             renderInterface();
-        }).catch(err => console.error("Sheet2 CSV 로드 실패:", err));
+        }).catch(err => console.error("Sheet2 CSV 파싱 실패:", err));
 
-        // Sheet1 (상품 리스트 CSV) 로드
-        fetch(URL_CSV_SHEET1).then(res => res.text()).then(text => {
+        // Sheet1 로드
+        fetch(URL_SHEET1).then(res => res.text()).then(text => {
             sheet1Data = parseCSV(text);
             renderInterface();
-        }).catch(err => console.error("Sheet1 CSV 로드 실패:", err));
+        }).catch(err => console.error("Sheet1 CSV 파싱 실패:", err));
 
         function sendOrder(menuName, menuPrice) {
             const confirmOrder = confirm(`[${menuName}] 상품을 구매 신청하시겠습니까?`);
             if (!confirmOrder) return;
             const siteName = document.getElementById('site-title').innerText;
             fetch(FORMSPREE_SECURE_URL, {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify({ "상점명": siteName, "신청상품": menuName, "금액": isNaN(Number(menuPrice)) ? menuPrice : Number(menuPrice).toLocaleString() + '원', "시간": new Date().toLocaleString('ko-KR') })
-            }).then(res => {
-                if (res.ok) alert('구매 요청이 안전하게 전송되었습니다!');
-                else alert('Formspree 오류가 발생했습니다. 대시보드를 확인하세요.');
-            });
-        }
-        window.addEventListener('keydown', function (e) { if (e.ctrlKey && (e.keyCode === 67 || e.keyCode === 86 || (e.shiftKey && e.keyCode === 73))) { e.preventDefault(); return false; } });
-    </script>
-</body>
-</html>
+method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },body: JSON.stringify({ "상점명": siteName, "신청상품": menuName, "금액": isNaN(Number(menuPrice)) ? menuPrice : Number(menuPrice).toLocaleString() + '원', "시간": new Date().toLocaleString('ko-KR') })}).then(res => {if (res.ok) alert('구매 요청이 안전하게 전송되었습니다!');else alert('Formspree 오류가 발생했습니다. 대시보드를 확인하세요.');});}window.addEventListener('keydown', function (e) { if (e.ctrlKey && (e.keyCode === 67 || e.keyCode === 86 || (e.shiftKey && e.keyCode === 73))) { e.preventDefault(); return false; } });
