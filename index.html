@@ -1,252 +1,124 @@
-!DOCTYPE html
-html lang=ko
-head
-    meta charset=UTF-8
-    meta name=viewport content=width=device-width, initial-scale=1.0
-    title실시간 관리 상점title
-    style
-         폰트 및 전체 배경 (사이버펑크 다크네온 테마) 
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>실시간 관리 상점</title>
+    <style>
         body { 
-            font-family 'Noto Sans KR', sans-serif; 
-            max-width 800px; 
-            margin 0 auto; 
-            padding 20px; 
-            background-color #0d0e12; 
-            color #ffffff;
-
-             🔒 CSS 레벨에서 드래그 및 선택 차단 
-            -webkit-user-select none;  사파리 브라우저 방지 
-            -moz-user-select none;     파이어폭스 브라우저 방지 
-            -ms-user-select none;      구형 익스플로러 방지 
-            user-select none;          표준 브라우저 드래그 방지 
+            font-family: 'Noto Sans KR', sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background-color: #0d0e12; 
+            color: #ffffff;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
         }
-
-         🔒 이미지 드래그앤드롭 저장 방지 
-        img {
-            -webkit-user-drag none;
-            -khtml-user-drag none;
-            -moz-user-drag none;
-            -o-user-drag none;
-            user-drag none;
-        }
-
-         1. 최상단 실시간 영업 상태 바 
+        img { -webkit-user-drag: none; user-drag: none; }
         .status-bar {
-            text-align center;
-            padding 12px;
-            border-radius 30px;
-            font-weight bold;
-            font-size 14px;
-            margin-bottom 35px;
-            transition all 0.3s ease;
-            letter-spacing 0.5px;
+            text-align: center; padding: 12px; border-radius: 30px; font-weight: bold; font-size: 14px; margin-bottom: 35px; transition: all 0.3s ease; letter-spacing: 0.5px;
         }
-        .status-bar.on {
-            background-color #064e3b; color #34d399;
-            box-shadow 0 0 15px rgba(52, 211, 153, 0.4);
-            border 1px solid #059669;
-        }
-        .status-bar.off {
-            background-color #7f1d1d; color #fca5a5;
-            box-shadow 0 0 15px rgba(252, 165, 165, 0.4);
-            border 1px solid #dc2626;
-        }
+        .status-bar.on { background-color: #064e3b; color: #34d399; box-shadow: 0 0 15px rgba(52, 211, 153, 0.4); border: 1px solid #059669; }
+        .status-bar.off { background-color: #7f1d1d; color: #fca5a5; box-shadow: 0 0 15px rgba(252, 165, 165, 0.4); border: 1px solid #dc2626; }
+        .main-header { text-align: center; margin-bottom: 40px; }
+        .main-header h1 { font-size: 46px; font-weight: 900; margin: 0 0 12px 0; letter-spacing: 2px; color: #a855f7; text-shadow: 0 0 10px rgba(168, 85, 247, 0.6), 0 0 20px rgba(168, 85, 247, 0.2); }
+        .main-header .subtitle { color: #9ca3af; font-size: 16px; margin: 0 0 20px 0; font-weight: 500; }
+        .main-header .notice { color: #06b6d4; font-size: 14px; background: rgba(6, 182, 212, 0.1); padding: 10px 24px; border-radius: 8px; display: inline-block; border: 1px solid rgba(6, 182, 212, 0.4); font-weight: 600; }
+        .section-divider { margin: 45px 0; height: 1px; background: linear-gradient(to right, transparent, #a855f7, #06b6d4, #a855f7, transparent); }
+        .section-title { text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 35px; color: #06b6d4; letter-spacing: 1px; text-shadow: 0 0 8px rgba(6, 182, 212, 0.4); }
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 25px; }
+        .menu-card { background: #161920; border: 1px solid #1f2937; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5); transition: all 0.25s ease-in-out; }
+        .menu-card:hover { transform: translateY(-5px); border-color: #06b6d4; box-shadow: 0 0 15px rgba(6, 182, 212, 0.3); }
+        .menu-card:hover .menu-name { color: #06b6d4; }
+        .menu-img { width: 100%; height: 180px; object-fit: cover; background: #090a0f; border-bottom: 1px solid #1f2937; }
+        .menu-info { padding: 18px; display: flex; flex-direction: column; flex-grow: 1; }
+        .menu-name { font-size: 18px; font-weight: bold; margin: 0 0 10px 0; color: #ffffff; transition: color 0.2s; }
+        .menu-price { font-size: 18px; color: #c084fc; font-weight: 800; margin: 0 0 18px 0; padding-bottom: 14px; border-bottom: 1px dashed #1f2937; }
+        .buy-btn { margin-top: auto; background: linear-gradient(135deg, #a855f7 0%, #6b21a8 100%); color: #ffffff; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; transition: all 0.2s; }
+        .buy-btn:hover { background: linear-gradient(135deg, #c084fc 0%, #a855f7 100%); box-shadow: 0 0 15px rgba(168, 85, 247, 0.6); }
+    </style>
+</head>
+<body oncontextmenu="return false" onselectstart="return false" ondragstart="return false">
 
-         2. 메인 타이틀 영역 
-        .main-header { text-align center; margin-bottom 40px; }
-        .main-header h1 { 
-            font-size 46px; 
-            font-weight 900; 
-            margin 0 0 12px 0; 
-            letter-spacing 2px; 
-            color #a855f7; 
-            text-shadow 0 0 10px rgba(168, 85, 247, 0.6), 0 0 20px rgba(168, 85, 247, 0.2);
-        }
-        .main-header .subtitle { 
-            color #9ca3af; 
-            font-size 16px; 
-            margin 0 0 20px 0; 
-            font-weight 500;
-        }
-        .main-header .notice { 
-            color #06b6d4; 
-            font-size 14px; 
-            background rgba(6, 182, 212, 0.1); 
-            padding 10px 24px; 
-            border-radius 8px; 
-            display inline-block; 
-            border 1px solid rgba(6, 182, 212, 0.4); 
-            font-weight 600;
-            box-shadow 0 0 10px rgba(6, 182, 212, 0.1);
-        }
+    <div id="status-bar" class="status-bar off">구글 스프레드시트 연결 중...</div>
 
-         3. 대형 섹션 구분선 
-        .section-divider {
-            margin 45px 0;
-            height 1px;
-            background linear-gradient(to right, transparent, #a855f7, #06b6d4, #a855f7, transparent);
-        }
+    <div class="main-header">
+        <h1 id="site-title">마켓 로딩 중</h1>
+        <p id="site-subtitle" class="subtitle">시트 데이터 동기화 중...</p>
+        <div id="site-notice" class="notice">공지사항을 가져오는 중입니다.</div>
+    </div>
 
-         가격표 타이틀 
-        .section-title { 
-            text-align center; 
-            font-size 24px; 
-            font-weight bold; 
-            margin-bottom 35px; 
-            color #06b6d4; 
-            letter-spacing 1px;
-            text-shadow 0 0 8px rgba(6, 182, 212, 0.4);
-        }
+    <div class="section-divider"></div>
+    <div class="section-title">주문 가격표</div>
 
-         4. 메뉴판 그리드 레이아웃 
-        .menu-grid { display grid; grid-template-columns repeat(auto-fill, minmax(220px, 1fr)); gap 25px; }
-        .menu-card { 
-            background #161920; 
-            border 1px solid #1f2937; 
-            border-radius 14px; 
-            overflow hidden; 
-            display flex; 
-            flex-direction column; 
-            box-shadow 0 10px 20px rgba(0, 0, 0, 0.5); 
-            transition all 0.25s ease-in-out; 
-        }
-        .menu-cardhover { 
-            transform translateY(-5px); 
-            border-color #06b6d4; 
-            box-shadow 0 0 15px rgba(6, 182, 212, 0.3);
-        }
-        .menu-cardhover .menu-name { color #06b6d4; }
-        .menu-img { width 100%; height 180px; object-fit cover; background #090a0f; border-bottom 1px solid #1f2937; }
-        .menu-info { padding 18px; display flex; flex-direction column; flex-grow 1; }
-        .menu-name { font-size 18px; font-weight bold; margin 0 0 10px 0; color #ffffff; transition color 0.2s; }
-        .menu-price { font-size 18px; color #c084fc; font-weight 800; margin 0 0 18px 0; padding-bottom 14px; border-bottom 1px dashed #1f2937; }
-        
-         5. 구매 버튼 
-        .buy-btn { 
-            margin-top auto; 
-            background linear-gradient(135deg, #a855f7 0%, #6b21a8 100%); 
-            color #ffffff; border none; padding 12px; border-radius 8px; cursor pointer; font-weight bold; font-size 14px; letter-spacing 0.5px; transition all 0.2s;
-            box-shadow 0 2px 8px rgba(168, 85, 247, 0.3);
-        }
-        .buy-btnhover { background linear-gradient(135deg, #c084fc 0%, #a855f7 100%); box-shadow 0 0 15px rgba(168, 85, 247, 0.6); }
-    style
-head
-!-- 🔒 자바스크립트 레벨에서 마우스 우클릭 및 불법 복사 키 조합 차단 --
-body oncontextmenu=return false onselectstart=return false ondragstart=return false
+    <div id="menu-container" class="menu-grid">
+        <p style="text-align: center; grid-column: 1/-1; color: #6b7280;">상품 리스트를 불러오고 있습니다...</p>
+    </div>
 
-    !-- 상단 영업 상태 바 --
-    div id=status-bar class=status-bar off연결 상태 확인 중...div
-
-    !-- 메인 정보 영역 --
-    div class=main-header
-        h1 id=site-title로드 중...h1
-        p id=site-subtitle class=subtitlep
-        div id=site-notice class=notice공지사항을 불러오는 중입니다...div
-    div
-
-    div class=section-dividerdiv
-    div class=section-title주문 가격표div
-
-    !-- 메뉴판 리스트 --
-    div id=menu-container class=menu-grid
-        p style=text-align center; grid-column 1-1; color #6b7280;메뉴판을 구성하는 중입니다...p
-    div
-
-    script
-         ⚠️ 필수 수정 항목 ⚠️
+    <script>
         const SHEET_ID = 'https://docs.google.com/spreadsheets/d/1LR8lOlX9cDIz8rXWlyHWJgowEhoLcSeCyeZucLOitUg/edit?usp=sharing'; 
         const FORMSPREE_SECURE_URL = 'https://formspree.io/f/maqzwlzz'; 
 
-        const URL_SHEET1 = `httpsgoogle.com{SHEET_ID}gviztqtqx=outjson&sheet=Sheet1`;
-        const URL_SHEET2 = `httpsgoogle.com{SHEET_ID}gviztqtqx=outjson&sheet=Sheet2`;
+        const URL_SHEET1 = `https://google.com{SHEET_ID}/gviz/tq?tqx=out:json&sheet=Sheet1`;
+        const URL_SHEET2 = `https://google.com{SHEET_ID}/gviz/tq?tqx=out:json&sheet=Sheet2`;
 
         function parseGoogleData(text) {
-            return JSON.parse(text.substring(47, text.length - 2)).table.rows;
+            try {
+                const start = text.indexOf('{');
+                const end = text.lastIndexOf('}') + 1;
+                return JSON.parse(text.substring(start, end)).table.rows;
+            } catch (e) { return null; }
         }
 
-        let sheet1Data = null;
-        let sheet2Data = null;
+        let sheet1Data = null; let sheet2Data = null;
 
         function updateStatusBar() {
-            if (!sheet1Data  !sheet2Data) return;
-            const currentStatus = sheet1Data.c.v  'OFF';
-            const customStatusText = sheet2Data.c.v  (currentStatus.toUpperCase() === 'ON'  '🟢 영업 중'  '🔴 부재 중');
+            if (!sheet1Data || !sheet2Data) return;
+            const currentStatus = sheet1Data?.c?.v || 'OFF';
+            const customStatusText = sheet2Data?.c?.v || (currentStatus.toUpperCase() === 'ON' ? '🟢 영업 중' : '🔴 부재 중');
             const statusBar = document.getElementById('status-bar');
             statusBar.innerText = customStatusText;
-            if(currentStatus.toUpperCase() === 'ON') { statusBar.className = status-bar on; } 
-            else { statusBar.className = status-bar off; }
+            if(currentStatus.toUpperCase() === 'ON') { statusBar.className = "status-bar on"; } 
+            else { statusBar.className = "status-bar off"; }
         }
 
-        fetch(URL_SHEET2)
-            .then(res = res.text())
-            .then(data = {
-                const rows = parseGoogleData(data);
-                sheet2Data = rows;
-                document.getElementById('site-title').innerText = rows.c.v  '상점';
-                document.getElementById('site-subtitle').innerText = rows.c.v  '';
-                document.getElementById('site-notice').innerText = rows.c.v  '공지사항이 없습니다.';
-                updateStatusBar();
-            });
+        fetch(URL_SHEET2).then(res => res.text()).then(data => {
+            const rows = parseGoogleData(data);
+            if(!rows) return; sheet2Data = rows;
+            document.getElementById('site-title').innerText = rows?.c?.v || '상점';
+            document.getElementById('site-subtitle').innerText = rows?.c?.v || '';
+            document.getElementById('site-notice').innerText = rows?.c?.v || '공지사항이 없습니다.';
+            updateStatusBar();
+        });
 
-        fetch(URL_SHEET1)
-            .then(res = res.text())
-            .then(data = {
-                const rows = parseGoogleData(data);
-                sheet1Data = rows;
-                updateStatusBar();
-                const container = document.getElementById('menu-container');
-                container.innerHTML = ''; 
-                rows.forEach(row = {
-                    const name = row.c.v;  
-                    const price = row.c.v; 
-                    const img = row.c.v  'httpsplaceholder.com'; 
-                    if (!name) return; 
-                    container.innerHTML += `
-                        div class=menu-card
-                            !-- 🔒 마우스 우클릭 저장 차단이 적용된 이미지 --
-                            img src=${img} class=menu-img alt=${name} oncontextmenu=return false; ondragstart=return false;
-                            div class=menu-info
-                                p class=menu-name${name}p
-                                p class=menu-price${Number(price).toLocaleString()} 원p
-                                button class=buy-btn onclick=sendOrder('${name}', '${price}')즉시 구매 요청button
-                            div
-                        div
-                    `;
-                });
-            });
-
-        function sendOrder(menuName, menuPrice) {
-            const confirmOrder = confirm(`[${menuName}] 상품을 구매 신청하시겠습니까`);
-            if (!confirmOrder) return;
-
-            const siteName = document.getElementById('site-title').innerText;
-
-            const payload = {
-                주문 상점 siteName,
-                주문 상품 menuName,
-                결제 금액 `${Number(menuPrice).toLocaleString()}원`,
-                신청 시간 new Date().toLocaleString('ko-KR')
-            };
-
-            fetch(FORMSPREE_SECURE_URL, {
-                method 'POST',
-                headers { 'Content-Type' 'applicationjson', 'Accept' 'applicationjson' },
-                body JSON.stringify(payload)
-            })
-            .then(res = {
-                if (res.ok) alert('보안 채널을 통해 구매 요청이 안전하게 전송되었습니다!');
-                else alert('전송 실패. Formspree 설정을 확인해주세요.');
-            })
-            .catch(() = alert('통신 오류가 발생했습니다.'));
-        }
-
-         🔒 추가 보안 단축키(F12, Ctrl+Shift+I, Ctrl+C 등) 제어 시도 차단
-        window.addEventListener('keydown', function (e) {
-             Ctrl + C (복사), Ctrl + Shift + I (개발자도구) 방지
-            if (e.ctrlKey && (e.keyCode === 67  e.keyCode === 86  (e.shiftKey && e.keyCode === 73))) {
-                e.preventDefault();
-                return false;
+        fetch(URL_SHEET1).then(res => res.text()).then(data => {
+            const rows = parseGoogleData(data);
+            if(!rows) return; sheet1Data = rows; updateStatusBar();
+            const container = document.getElementById('menu-container');
+            container.innerHTML = ''; 
+            for(let i = 1; i < rows.length; i++) {
+                const row = rows[i]; const name = row.c?.v; const price = row.c?.v; const img = row.c?.v || 'https://placeholder.com';
+                if (!name) continue; 
+                container.innerHTML += `<div class="menu-card"><img src="${img}" class="menu-img" alt="${name}" oncontextmenu="return false;" ondragstart="return false;"><div class="menu-info"><p class="menu-name">${name}</p><p class="menu-price">${Number(price).toLocaleString()} 원</p><button class="buy-btn" onclick="sendOrder('${name}', '${price}')">즉시 구매 요청</button></div></div>`;
             }
         });
-    script
-body
+
+        function sendOrder(menuName, menuPrice) {
+            const confirmOrder = confirm(`[${menuName}] 상품을 구매 신청하시겠습니까?`);
+            if (!confirmOrder) return;
+            const siteName = document.getElementById('site-title').innerText;
+            fetch(FORMSPREE_SECURE_URL, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ "상점명": siteName, "신청상품": menuName, "금액": `${Number(menuPrice).toLocaleString()}원`, "시간": new Date().toLocaleString('ko-KR') })
+            }).then(res => {
+                if (res.ok) alert('구매 요청이 안전하게 전송되었습니다!');
+                else alert('Formspree 오류가 발생했습니다.');
+            });
+        }
+        window.addEventListener('keydown', function (e) { if (e.ctrlKey && (e.keyCode === 67 || e.keyCode === 86 || (e.shiftKey && e.keyCode === 73))) { e.preventDefault(); return false; } });
+    </script>
+</body>
+</html>
