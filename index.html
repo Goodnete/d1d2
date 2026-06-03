@@ -43,12 +43,12 @@
 </head>
 <body oncontextmenu="return false" onselectstart="return false" ondragstart="return false">
 
-    <div id="status-bar" class="status-bar off">구글 스프레드시트 연결 중...</div>
+    <div id="status-bar" class="status-bar off">구글 스프레드시트 연동 중...</div>
 
     <div class="main-header">
         <h1 id="site-title">마켓 로딩 중</h1>
-        <p id="site-subtitle" class="subtitle">시트 데이터 동기화 중...</p>
-        <div id="site-notice" class="notice">공지사항을 가져오는 중입니다.</div>
+        <p id="site-subtitle" class="subtitle">데이터 동기화 중...</p>
+        <div id="site-notice" class="notice">공지사항을 가져오는 중입니다...</div>
     </div>
 
     <div class="section-divider"></div>
@@ -59,11 +59,9 @@
     </div>
 
     <script>
-        // 구글 시트 주소에서 ID 부분만 추출하여 적용했습니다.
         const SHEET_ID = '1LR8lOlX9cDIz8rXWlyHWJgowEhoLcSeCyeZucLOitUg'; 
         const FORMSPREE_SECURE_URL = 'https://formspree.io/f/maqzwlzz'; 
 
-        // 오타 수정 및 올바른 구글 API 주소 매핑
         const URL_SHEET1 = `https://google.com{SHEET_ID}/gviz/tq?tqx=out:json&sheet=Sheet1`;
         const URL_SHEET2 = `https://google.com{SHEET_ID}/gviz/tq?tqx=out:json&sheet=Sheet2`;
 
@@ -75,32 +73,42 @@
             } catch (e) { return null; }
         }
 
-        let sheet1Data = null; let sheet2Data = null;
+        let sheet1Data = null; 
+        let sheet2Data = null;
 
         function updateStatusBar() {
-            if (!sheet1Data || !sheet2Data) return;
-            const currentStatus = sheet1Data[1]?.c[3]?.v || 'OFF'; // Sheet1의 특정 셀 구조 기준 (필요시 시트 구조에 맞게 인덱스 수정 필요)
-            const customStatusText = sheet2Data[1]?.c[2]?.v || (currentStatus.toUpperCase() === 'ON' ? '🟢 영업 중' : '🔴 부재 중');
+            if (!sheet1Data) return;
+            // Sheet1의 2행 1열(인덱스 0) 접속상태 값을 가져옵니다.
+            const currentStatus = sheet1Data[0]?.c[0]?.v ? String(sheet1Data[0].c[0].v).toUpperCase() : 'OFF';
+            
+            // Sheet2의 4행 2열(인덱스 1) 상태문구를 가져옵니다. 만약 없으면 기본 문구 출력
+            const customStatusText = sheet2Data ? sheet2Data[3]?.c[1]?.v : null;
+            const defaultText = currentStatus === 'ON' ? '🟢 영업 중' : '🔴 부재 중';
+            
             const statusBar = document.getElementById('status-bar');
-            statusBar.innerText = customStatusText;
-            if(currentStatus.toUpperCase() === 'ON') { statusBar.className = "status-bar on"; } 
-            else { statusBar.className = "status-bar off"; }
+            statusBar.innerText = customStatusText || defaultText;
+            
+            if(currentStatus === 'ON') { 
+                statusBar.className = "status-bar on"; 
+            } else { 
+                statusBar.className = "status-bar off"; 
+            }
         }
 
+        // Sheet2 (상점 타이틀, 공지사항) 불러오기
         fetch(URL_SHEET2).then(res => res.text()).then(data => {
             const rows = parseGoogleData(data);
             if(!rows || rows.length === 0) return; 
             sheet2Data = rows;
             
-            // 데이터가 있는 첫 번째 행(보통 제목이나 첫 데이터)을 기준으로 텍스트 매핑
-            if(rows[1] && rows[1].c) {
-                document.getElementById('site-title').innerText = rows[1].c[0]?.v || '상점';
-                document.getElementById('site-subtitle').innerText = rows[1].c[1]?.v || '';
-                document.getElementById('site-notice').innerText = rows[1].c[2]?.v || '공지사항이 없습니다.';
-            }
+            // B열(인덱스 1)의 값을 순서대로 가져와 타이틀 매핑
+            document.getElementById('site-title').innerText = rows[0]?.c[1]?.v || '레스너 SHOP';
+            document.getElementById('site-subtitle').innerText = rows[1]?.c[1]?.v || '';
+            document.getElementById('site-notice').innerText = rows[2]?.c[1]?.v || '공지사항이 없습니다.';
             updateStatusBar();
-        }).catch(err => console.error("Sheet2 로드 실패:", err));
+        }).catch(err => console.error("상점 정보 로드 실패:", err));
 
+        // Sheet1 (상품 목록) 불러오기
         fetch(URL_SHEET1).then(res => res.text()).then(data => {
             const rows = parseGoogleData(data);
             if(!rows || rows.length === 0) return; 
@@ -110,18 +118,28 @@
             const container = document.getElementById('menu-container');
             container.innerHTML = ''; 
             
-            for(let i = 1; i < rows.length; i++) {
+            // 제목행(1행) 제외하고 2행(인덱스 0)부터 데이터 생성
+            for(let i = 0; i < rows.length; i++) {
                 const row = rows[i]; 
                 if (!row || !row.c) continue;
                 
-                const name = row.c[0]?.v; 
-                const price = row.c[1]?.v; 
-                const img = row.c[2]?.v || 'https://placeholder.com';
+                const name = row.c[1]?.v;  // B열: 이름
+                const price = row.c[2]?.v; // C열: 가격
+                const img = row.c[3]?.v || 'https://placeholder.com'; // D열: 사진URL
+                
                 if (!name) continue; 
                 
-                container.innerHTML += `<div class="menu-card"><img src="${img}" class="menu-img" alt="${name}" oncontextmenu="return false;" ondragstart="return false;"><div class="menu-info"><p class="menu-name">${name}</p><p class="menu-price">${Number(price).toLocaleString()} 원</p><button class="buy-btn" onclick="sendOrder('${name}', '${price}')">즉시 구매 요청</button></div></div>`;
+                container.innerHTML += `
+                    <div class="menu-card">
+                        <img src="${img}" class="menu-img" alt="${name}" oncontextmenu="return false;" ondragstart="return false;">
+                        <div class="menu-info">
+                            <p class="menu-name">${name}</p>
+                            <p class="menu-price">${Number(price).toLocaleString()} 원</p>
+                            <button class="buy-btn" onclick="sendOrder('${name}', '${price}')">즉시 구매 요청</button>
+                        </div>
+                    </div>`;
             }
-        }).catch(err => console.error("Sheet1 로드 실패:", err));
+        }).catch(err => console.error("상품 리스트 로드 실패:", err));
 
         function sendOrder(menuName, menuPrice) {
             const confirmOrder = confirm(`[${menuName}] 상품을 구매 신청하시겠습니까?`);
@@ -132,7 +150,7 @@
                 body: JSON.stringify({ "상점명": siteName, "신청상품": menuName, "금액": `${Number(menuPrice).toLocaleString()}원`, "시간": new Date().toLocaleString('ko-KR') })
             }).then(res => {
                 if (res.ok) alert('구매 요청이 안전하게 전송되었습니다!');
-                else alert('Formspree 오류가 발생했습니다.');
+                else alert('Formspree 오류가 발생했습니다. 이메일 활성화 상태를 확인해 주세요.');
             });
         }
         window.addEventListener('keydown', function (e) { if (e.ctrlKey && (e.keyCode === 67 || e.keyCode === 86 || (e.shiftKey && e.keyCode === 73))) { e.preventDefault(); return false; } });
