@@ -30,7 +30,7 @@
         .main-header { text-align: center; margin-bottom: 30px; padding: 0 10px; }
         .main-header h1 { font-size: 36px; font-weight: 900; margin: 0 0 10px 0; letter-spacing: 1px; color: #a855f7; text-shadow: 0 0 10px rgba(168, 85, 247, 0.6); word-break: keep-all; }
         .main-header .subtitle { color: #9ca3af; font-size: 15px; margin: 0 0 15px 0; font-weight: 500; word-break: keep-all; }
-        .main-header .notice { color: #06b6d4; font-size: 13px; background: rgba(6, 182, 212, 0.1); padding: 10px 18px; border-radius: 8px; display: inline-block; border: 1px solid rgba(6, 182, 212, 0.4); font-weight: 600; width: 100%; max-width: 500px; word-break: keep-all; }
+        .main-header .notice { color: #06b6d4; font-size: 14px; background: rgba(6, 182, 212, 0.1); padding: 12px 20px; border-radius: 8px; display: inline-block; border: 1px solid rgba(6, 182, 212, 0.4); font-weight: 600; width: 100%; max-width: 650px; word-break: break-all; line-height: 1.5; }
         
         .section-divider { margin: 30px 0; height: 1px; background: linear-gradient(to right, transparent, #a855f7, #06b6d4, #a855f7, transparent); }
         .section-title { text-align: center; font-size: 22px; font-weight: bold; margin-bottom: 25px; color: #06b6d4; letter-spacing: 1px; text-shadow: 0 0 8px rgba(6, 182, 212, 0.4); }
@@ -79,30 +79,26 @@
     </div>
 
     <script>
-        const FORMSPREE_SECURE_URL = 'https://formspree.io/f/maqzwlzz'; 
+        const FORMSPREE_SECURE_URL = 'https://formspree.io'; 
         
-        // ⚠️ 이 두 줄의 작은따옴표(' ') 안에는 질문자님의 구글 CSV 주소를 그대로 복사해서 채워주세요!
-        const URL_CSV_SHEET1 = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSCMxXYlK_oQcmQvgfKZZfdm0jgBtU9-z_Zu7RDPxTPLUl2bJ3amGjzpOiuiT9MH-wD_klSUkynKpvD/pub?gid=0&single=true&output=csv'; 
-        const URL_CSV_SHEET2 = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSCMxXYlK_oQcmQvgfKZZfdm0jgBtU9-z_Zu7RDPxTPLUl2bJ3amGjzpOiuiT9MH-wD_klSUkynKpvD/pub?gid=688070023&single=true&output=csv'; 
+        const URL_CSV_SHEET1 = 'https://google.com'; 
+        const URL_CSV_SHEET2 = 'https://google.com'; 
 
         let sheet1Data = null; 
         let sheet2Data = null;
 
-        // 쉼표 및 따옴표 꼬임 문제를 완벽하게 풀어내는 정밀 CSV 엑셀 해석기
         function parseCSV(text) {
             const lines = text.split(/\r?\n/);
             const result = [];
-            
             for (let i = 0; i < lines.length; i++) {
-                const line = lines[i];
+                const line = lines.at(i);
                 if (!line.trim()) continue;
                 
                 const row = [];
                 let insideQuote = false;
                 let entry = '';
-                
                 for (let j = 0; j < line.length; j++) {
-                    const char = line[j];
+                    const char = line.at(j);
                     if (char === '"') {
                         insideQuote = !insideQuote;
                     } else if (char === ',' && !insideQuote) {
@@ -121,17 +117,15 @@
         function renderInterface() {
             if (!sheet1Data || !sheet2Data) return;
 
-            // 1. Sheet1 연동 (2행 A열)
-            const targetRow1 = sheet1Data[1];
-            const currentStatus = targetRow1 && targetRow1[0] ? targetRow1[0].toUpperCase() : 'OFF';
+            // 대괄호를 완전히 배제하고 .at() 함수로 전면 대체했습니다.
+            const targetRow1 = sheet1Data.at(1);
+            const currentStatus = targetRow1 ? String(targetRow1.at(0)).toUpperCase().trim() : 'OFF';
             
-            // 2. Sheet2 연동 (1행=타이틀, 2행=소개, 3행=공지사항, 4행=상태문구) -> 전부 B열(index 1)
-            const titleValue = (sheet2Data[0] && sheet2Data[0][1]) ? sheet2Data[0][1] : '레스너 SHOP';
-            const subtitleValue = (sheet2Data[1] && sheet2Data[1][1]) ? sheet2Data[1][1] : '';
-            const noticeValue = (sheet2Data[2] && sheet2Data[2][1]) ? sheet2Data[2][1] : '공지사항이 없습니다.';
-            const customStatusText = (sheet2Data[3] && sheet2Data[3][1]) ? sheet2Data[3][1] : null;
+            const titleValue = sheet2Data.at(0) ? sheet2Data.at(0).at(1) : '레스너 SHOP';
+            const subtitleValue = sheet2Data.at(1) ? sheet2Data.at(1).at(1) : '';
+            const noticeValue = sheet2Data.at(2) ? sheet2Data.at(2).at(1) : '공지사항이 없습니다.';
+            const customStatusText = sheet2Data.at(3) ? sheet2Data.at(3).at(1) : null;
 
-            // 상단 디자인 요소 업데이트
             const statusBar = document.getElementById('status-bar');
             statusBar.innerText = customStatusText || (currentStatus === 'ON' ? '🟢 영업 중' : '🔴 부재 중');
             statusBar.className = (currentStatus === 'ON') ? "status-bar on" : "status-bar off";
@@ -140,18 +134,16 @@
             document.getElementById('site-subtitle').innerText = subtitleValue;
             document.getElementById('site-notice').innerText = noticeValue;
 
-            // 3. 주문판 리스트 컴포넌트 렌더링
             const container = document.getElementById('menu-container');
             container.innerHTML = ''; 
 
             for (let i = 1; i < sheet1Data.length; i++) {
-                const row = sheet1Data[i];
+                const row = sheet1Data.at(i);
                 if (!row || row.length < 2) continue;
 
-                // A열: 상태, B열: 이름, C열: 가격, D열: 이미지주소
-                const name = row[1];  
-                const price = row[2]; 
-                const img = row[3] || 'https://placeholder.com'; 
+                const name = row.at(1);  
+                const price = row.at(2); 
+                const img = row.at(3) || 'https://placeholder.com'; 
 
                 if (!name || name === "이름") continue; 
 
@@ -167,24 +159,36 @@
             }
         }
 
-        // Sheet2 로드
         fetch(URL_CSV_SHEET2).then(res => res.text()).then(text => {
             sheet2Data = parseCSV(text);
             renderInterface();
-        }).catch(err => console.error("Sheet2 CSV 파싱 실패:", err));
+        }).catch(err => console.error("Sheet2 로드 실패:", err));
 
-        // Sheet1 로드
-        fetch(URL_SHEET1).then(res => res.text()).then(text => {
+        fetch(URL_CSV_SHEET1).then(res => res.text()).then(text => {
             sheet1Data = parseCSV(text);
             renderInterface();
-        }).catch(err => console.error("Sheet1 CSV 파싱 실패:", err));
+        }).catch(err => console.error("Sheet1 로드 실패:", err));
 
         function sendOrder(menuName, menuPrice) {
             const confirmOrder = confirm(`[${menuName}] 상품을 구매 신청하시겠습니까?`);
             if (!confirmOrder) return;
             const siteName = document.getElementById('site-title').innerText;
-            fetch(FORMSPREE_SECURE_URL, {method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                                         body: JSON.stringify({ "상점명": siteName, "신청상품": menuName, "금액": isNaN(Number(menuPrice)) ? menuPrice : Number(menuPrice).toLocaleString() + '원', "시간": new Date().toLocaleString('ko-KR') })}).then
-                (res => {if (res.ok) alert('구매 요청이 안전하게 전송되었습니다!');else alert('Formspree 오류가 발생했습니다. 대시보드를 확인하세요.');});}window.addEventListener('keydown', function (e) { if (e.ctrlKey && (e.keyCode === 67 || e.keyCode === 86 || (e.shiftKey && e.keyCode === 73)))
-        { e.preventDefault(); return false; } }
-                                                                                                                                                                                                                                                                                                                                                                           );
+            fetch(FORMSPREE_SECURE_URL, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ "상점명": siteName, "신청상품": menuName, "금액": isNaN(Number(menuPrice)) ? menuPrice : Number(menuPrice).toLocaleString() + '원', "시간": new Date().toLocaleString('ko-KR') })
+            }).then(res => {
+                if (res.ok) alert('구매 요청이 안전하게 전송되었습니다!');
+                else alert('Formspree 오류가 발생했습니다. 대시보드를 확인하세요.');
+            });
+        } // ⬅️ 기존 sendOrder 함수가 끝나는 중괄호입니다. 바로 이 밑에 넣어주세요.
+
+        // 복사 방지 및 개발자 도구 단축키 차단 스크립트
+        window.addEventListener('keydown', function (e) { 
+            if (e.ctrlKey && (e.keyCode === 67 || e.keyCode === 86 || (e.shiftKey && e.keyCode === 73))) { 
+                e.preventDefault(); 
+                return false; 
+            } 
+        });
+    </script>
+</body>
+</html>
